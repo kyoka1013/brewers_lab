@@ -3,135 +3,76 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Brewers Lab — コーヒー抽出を体系的に学ぶ</title>
-<style>
-  :root{
-    --ink:#1a1410; --paper:#f5efe4; --paper-2:#ece3d3; --line:#c9bca3;
-    --muted:#7a6e5c; --accent:#c08a3e; --under:#5b8aa6; --over:#9a3b2e; --good:#5c8a6e;
-  }
-  *{box-sizing:border-box}
-  body{margin:0;background:var(--paper);color:var(--ink);
-    font-family:"Hiragino Kaku Gothic ProN","Yu Gothic","Segoe UI",system-ui,sans-serif;
-    line-height:1.6;-webkit-font-smoothing:antialiased}
-  .wrap{max-width:920px;margin:0 auto;padding:36px 20px 80px}
-  .hero{border-bottom:2px solid var(--ink);padding-bottom:24px;margin-bottom:28px}
-  .eyebrow{font-size:11px;letter-spacing:.3em;text-transform:uppercase;color:var(--muted);margin:0 0 8px}
-  h1{font-size:clamp(28px,5vw,40px);margin:0 0 10px;letter-spacing:.01em;line-height:1.15}
-  .lede{font-size:15px;color:var(--muted);max-width:640px;margin:0}
-  .flow{display:flex;gap:8px;flex-wrap:wrap;margin:20px 0 0}
-  .flow span{font-size:12px;background:var(--paper-2);border:1px solid var(--line);
-    border-radius:20px;padding:5px 13px;color:var(--ink)}
-  .flow span.arrow{border:none;background:none;color:var(--muted);padding:5px 0}
-  h2{font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);
-    margin:34px 0 14px;font-weight:700}
-  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px}
-  .card{background:var(--paper-2);border:1px solid var(--line);border-radius:8px;
-    padding:18px;text-decoration:none;color:var(--ink);display:flex;flex-direction:column;
-    transition:.15s;position:relative;overflow:hidden}
-  .card:hover{border-color:var(--accent);transform:translateY(-2px)}
-  .card .ch{font-size:11px;letter-spacing:.1em;color:var(--accent);font-weight:700;margin-bottom:6px}
-  .card .lv{font-size:11px;color:var(--muted);margin-bottom:8px}
-  .card .ti{font-size:17px;font-weight:700;margin:0 0 6px;line-height:1.3}
-  .card .ds{font-size:13px;color:var(--muted);margin:0}
-  .card .var{margin-top:12px;font-size:11px;color:var(--ink);background:var(--paper);
-    border:1px solid var(--line);border-radius:5px;padding:5px 8px;display:inline-block;align-self:flex-start}
-  .twocol{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-  @media(max-width:600px){.twocol{grid-template-columns:1fr}}
-  .bigcard{background:var(--ink);color:var(--paper);border-radius:8px;padding:22px;
-    text-decoration:none;display:flex;flex-direction:column;transition:.15s}
-  .bigcard:hover{background:#2a2018}
-  .bigcard .ic{font-size:26px;margin-bottom:8px}
-  .bigcard .ti{font-size:18px;font-weight:700;margin:0 0 6px}
-  .bigcard .ds{font-size:13px;color:#cdbfa3;margin:0}
-  .note{background:var(--paper-2);border-left:3px solid var(--accent);padding:14px 16px;
-    border-radius:0 6px 6px 0;font-size:13px;color:var(--muted);margin-top:30px;line-height:1.7}
-  .note b{color:var(--ink)}
-  footer{margin-top:40px;padding-top:20px;border-top:1px solid var(--line);
-    font-size:12px;color:var(--muted)}
-</style>
+<title>Brewers Lab — ホーム</title>
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
-<div class="wrap">
-  <div class="hero">
-    <p class="eyebrow">Brewers Lab</p>
-    <h1>コーヒー抽出を、<br>体験しながら体系的に学ぶ</h1>
-    <p class="lede">HARIO Polaris 前提。レシオはスケールに任せ、挽き目・時間・湯温という「動かす変数」を一つずつ体に落とし込む。最終到達点は、未知の豆に対して自分で仮説を立て、レシピを設計し、Brewers Cup に挑めるレベル。</p>
-    <div class="flow">
-      <span>体験</span><span class="arrow">→</span>
-      <span>観察</span><span class="arrow">→</span>
-      <span>言語化</span><span class="arrow">→</span>
-      <span>理論化</span><span class="arrow">→</span>
-      <span>再実験</span>
-    </div>
-  </div>
+<script src="app.js"></script>
+<script>
+if(!BrewersLab.Auth.require()) {}
+else BrewersLab.renderNav('home');
+</script>
 
-  <h2>学習チャプター</h2>
-  <div class="grid">
+<div class="wrap">
+  <header class="page">
+    <p class="eyebrow">Brewers Lab</p>
+    <h1>ドリップを、もう一段深く。</h1>
+    <p class="lede">中級者向けの体系的な学習サイト。HARIO Polaris などのレシオ機能付きスケールを前提に、挽き目・湯温・注ぎ方・豆・水・器具を一元管理して、再現性とレシピ開発力を上げる。記録は端末内のあなた専用DBに溜まり、Claudeに渡せばコーチング付きで進化する。</p>
+  </header>
+
+  <h2>5つの学習チャプター</h2>
+  <div class="cards">
     <a class="card" href="ch1.html">
-      <div class="ch">Chapter 1</div><div class="lv">Level 0 → 1</div>
-      <p class="ti">濃度と抽出率</p>
-      <p class="ds">「濃い/薄い」と「抽出が足りる/足りない」は別物。すべての出発点。</p>
-      <span class="var">未抽出 / 過抽出</span>
+      <div class="ch">Chapter 1</div>
+      <p class="ti">ドリップ基礎の総まとめ</p>
+      <p class="ds">手順・常識・道具の使いこなし。「なんとなく淹れている」を「狙って淹れている」へ。</p>
+      <span class="var">基礎の再点検</span>
     </a>
     <a class="card" href="ch2.html">
-      <div class="ch">Chapter 2</div><div class="lv">Level 1 → 2</div>
-      <p class="ti">挽き目</p>
-      <p class="ds">ダイヤルを回して味を予測し、1段の差を言語化する練習。</p>
-      <span class="var">主要変数 · 挽き目</span>
+      <div class="ch">Chapter 2</div>
+      <p class="ti">味の言語化トレーニング</p>
+      <p class="ds">「美味しい」で止まらない。5軸＋語彙＋識別ドリルで、味から抽出を逆算できる脳に。</p>
+      <span class="var">官能の再現性</span>
     </a>
     <a class="card" href="ch3.html">
-      <div class="ch">Chapter 3</div><div class="lv">Level 2 → 3</div>
-      <p class="ti">注湯設計</p>
-      <p class="ds">Polaris の % 表示を活かし、注湯のタイミングと総抽出時間を設計する。</p>
-      <span class="var">主要変数 · 時間</span>
+      <div class="ch">Chapter 3</div>
+      <p class="ti">レシピ開発ラボ</p>
+      <p class="ds">挽き目・湯温・レシオ・注湯・器具を一画面で操作・記録。最良の一杯を保存しJPEGカード化。</p>
+      <span class="var">変数管理の本丸</span>
     </a>
     <a class="card" href="ch4.html">
-      <div class="ch">Chapter 4</div><div class="lv">Level 2 → 3</div>
-      <p class="ti">湯温</p>
-      <p class="ds">挽き目と時間を固定し、湯温だけを切り出して影響を理解する。</p>
-      <span class="var">補助変数 · 湯温</span>
+      <div class="ch">Chapter 4</div>
+      <p class="ti">豆を知る</p>
+      <p class="ds">産地・品種・精製・焙煎度。豆を見て「どう淹れるか」を予測できるようになる。</p>
+      <span class="var">原料の理解</span>
     </a>
     <a class="card" href="ch5.html">
-      <div class="ch">Chapter 5</div><div class="lv">Level 3 → 4</div>
-      <p class="ti">変数の相互作用</p>
-      <p class="ds">3 変数を同時に動かし、予測してから答え合わせ。推論力を鍛える。</p>
-      <span class="var">挽き目 × 時間 × 湯温</span>
-    </a>
-    <a class="card" href="ch6.html">
-      <div class="ch">Chapter 6</div><div class="lv">Level 4 → 5</div>
-      <p class="ti">未知の豆とレシピ開発</p>
-      <p class="ds">初めての豆に仮説レシピを組み、試行を重ねて収束させる。</p>
-      <span class="var">レシピ設計</span>
-    </a>
-    <a class="card" href="ch7.html">
-      <div class="ch">Chapter 7</div><div class="lv">Level 5 → 6</div>
-      <p class="ti">Brewers Cup 競技準備</p>
-      <p class="ds">WCC ルール準拠。テーマ・レシピ・プレゼン・再現性を統合する。</p>
-      <span class="var">競技レベル</span>
+      <div class="ch">Chapter 5</div>
+      <p class="ti">SCA・抽出理論</p>
+      <p class="ds">ゴールデンカップ、TDS、EY、水質基準。世界共通の物差しを実践と結びつける。</p>
+      <span class="var">業界標準・上級</span>
     </a>
   </div>
 
-  <h2>知識と感覚のトレーニング</h2>
-  <div class="twocol">
-    <a class="bigcard" href="knowledge.html">
-      <div class="ic">📚</div>
-      <p class="ti">知識ライブラリ</p>
-      <p class="ds">抽出理論・SCA 基準・水質・焙煎・精製・器具まで、各チャプターを支える理論を体系的に。一次資料への導線つき。</p>
+  <h2>あなたのデータ</h2>
+  <div class="row2">
+    <a class="card" href="log.html">
+      <div class="ch">記録</div>
+      <p class="ti">ドリップログ</p>
+      <p class="ds">今までの抽出記録を時系列で見る。Claudeに渡すプロンプトをここから生成。</p>
     </a>
-    <a class="bigcard" href="palate.html">
-      <div class="ic">👅</div>
-      <p class="ti">味覚の言語化トレーニング</p>
-      <p class="ds">「美味しい」を超えて、酸質・甘さ・ボディ・余韻を言葉にする。フレーバーホイールと反復ドリルで感覚を鍛える。</p>
+    <a class="card" href="recipes.html">
+      <div class="ch">保存</div>
+      <p class="ti">マイレシピ</p>
+      <p class="ds">お気に入りの一杯を保存。JPEGカードにして共有できる。</p>
     </a>
   </div>
 
-  <div class="note">
-    <b>記録について。</b> 各チャプターのアプリで淹れた結果は、別チャット経由で Notion データベース「☕ Brewers Lab — 抽出ログ」に蓄積します。アプリの「Claude に振り返りを送る」ボタンが、その入口です。アプリで体験・観察し、Claude との対話で言語化・理論化し、Notion に記録を貯める — この三層で学習が回ります。
+  <div class="note" style="margin-top:24px">
+    <b>学習の流れ。</b> 各章で「Claudeを○○の専門家にするプロンプト」を用意しています。コピーしてClaudeに貼り、その章で淹れた記録を投げれば、専門家として対話できます。記録はこのサイト内にあなた専用DBとして残り、Claudeとの会話の入力にも、レシピカードの素材にもなります。
   </div>
 
-  <footer>
-    Brewers Lab · SCA 基準と一次資料に基づく自習用教材 · HARIO Polaris 対応
-  </footer>
+  <footer class="site">Brewers Lab · v1 · データはこの端末のlocalStorageに保存されます</footer>
 </div>
 </body>
 </html>

@@ -3,335 +3,126 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Brewers Lab — Ch.1 濃度と抽出率</title>
-<style>
-  :root {
-    --ink: #1a1410;
-    --paper: #f5efe4;
-    --paper-2: #ece3d3;
-    --line: #c9bca3;
-    --under: #5b8aa6;   /* under-extracted: cool blue */
-    --good: #c08a3e;    /* golden cup: brass */
-    --over: #9a3b2e;    /* over-extracted: burnt red */
-    --muted: #7a6e5c;
-    --accent: #c08a3e;
-  }
-  * { box-sizing: border-box; }
-  body {
-    margin: 0;
-    background: var(--paper);
-    color: var(--ink);
-    font-family: "Hiragino Kaku Gothic ProN", "Yu Gothic", "Segoe UI", system-ui, sans-serif;
-    line-height: 1.5;
-    -webkit-font-smoothing: antialiased;
-  }
-  .wrap { max-width: 760px; margin: 0 auto; padding: 28px 20px 60px; }
-  header { border-bottom: 2px solid var(--ink); padding-bottom: 14px; margin-bottom: 24px; }
-  .eyebrow { font-size: 11px; letter-spacing: .28em; text-transform: uppercase; color: var(--muted); margin: 0 0 6px; }
-  h1 { font-size: 26px; margin: 0; letter-spacing: .02em; font-weight: 700; }
-  h1 .sub { display:block; font-size: 13px; font-weight: 400; color: var(--muted); margin-top:6px; letter-spacing:.04em;}
-  .panel { background: var(--paper-2); border: 1px solid var(--line); border-radius: 4px; padding: 18px 18px 20px; margin-bottom: 18px; }
-  .panel h2 { font-size: 13px; letter-spacing: .14em; text-transform: uppercase; margin: 0 0 14px; color: var(--muted); font-weight:700;}
-  .ctrl { margin-bottom: 16px; }
-  .ctrl:last-child { margin-bottom: 0; }
-  .ctrl label { display:flex; justify-content: space-between; align-items: baseline; font-size: 13px; margin-bottom: 6px; }
-  .ctrl label b { font-size: 15px; font-variant-numeric: tabular-nums; }
-  input[type=range] { width: 100%; accent-color: var(--accent); height: 24px; }
-  .readouts { display:grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin-top: 4px;}
-  .ro { background: var(--paper); border:1px solid var(--line); border-radius:4px; padding:10px 12px; text-align:center;}
-  .ro .k { font-size: 10px; letter-spacing:.12em; text-transform:uppercase; color:var(--muted);}
-  .ro .v { font-size: 22px; font-weight:700; font-variant-numeric: tabular-nums; margin-top:2px;}
-  .ro .u { font-size: 11px; color: var(--muted); }
-  /* extraction zone bar */
-  .zonebar { position:relative; height: 30px; border-radius:4px; overflow:hidden; margin-top:10px;
-    background: linear-gradient(90deg,
-      var(--under) 0%, var(--under) 35%,
-      var(--good) 42%, var(--good) 58%,
-      var(--over) 65%, var(--over) 100%); }
-  .zonebar .marker { position:absolute; top:-4px; bottom:-4px; width:3px; background:var(--ink);
-    box-shadow:0 0 0 2px var(--paper); transition: left .15s ease; }
-  .zonelabels { display:flex; justify-content:space-between; font-size:10px; color:var(--muted); margin-top:4px; letter-spacing:.08em;}
-  /* map */
-  .mapwrap { position:relative; }
-  svg { width:100%; height:auto; display:block; }
-  .verdict { font-size:15px; font-weight:700; margin-top:12px; padding:10px 12px; border-radius:4px; border:1px solid var(--line); background:var(--paper);}
-  .verdict.u { color:var(--under); }
-  .verdict.g { color:var(--good); }
-  .verdict.o { color:var(--over); }
-  .btnrow { display:flex; flex-wrap:wrap; gap:8px; margin-top:6px; }
-  button { font-family:inherit; cursor:pointer; border:1px solid var(--ink); background:var(--paper);
-    color:var(--ink); padding:9px 14px; border-radius:4px; font-size:13px; font-weight:600; transition:.12s; }
-  button:hover { background:var(--ink); color:var(--paper); }
-  button.primary { background:var(--ink); color:var(--paper); }
-  button.primary:hover { background:var(--accent); border-color:var(--accent); }
-  button:focus-visible { outline:3px solid var(--accent); outline-offset:2px; }
-  .cups { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:12px; }
-  .cup { border:1px dashed var(--line); border-radius:4px; padding:12px; min-height:96px; font-size:12px; }
-  .cup h3 { margin:0 0 8px; font-size:12px; letter-spacing:.1em; text-transform:uppercase; }
-  .cup.empty { color:var(--muted); display:flex; align-items:center; justify-content:center; font-style:italic; }
-  .cup .row { display:flex; justify-content:space-between; font-variant-numeric:tabular-nums; padding:2px 0; border-bottom:1px dotted var(--line);}
-  .cup .row:last-child{border-bottom:none;}
-  .diag { margin-top:12px; font-size:13px; }
-  .diag ul { margin:8px 0 0; padding-left:18px;}
-  .diag li { margin-bottom:5px; }
-  .sendbox { margin-top:14px; }
-  textarea { width:100%; min-height:70px; font-family:inherit; font-size:12px; border:1px solid var(--line);
-    border-radius:4px; padding:8px; background:var(--paper); color:var(--ink); resize:vertical;}
-  .hint { font-size:11px; color:var(--muted); margin-top:8px; }
-  .note { font-size:11px; color:var(--muted); font-style:italic; }
-  @media (max-width:520px){ .readouts{grid-template-columns:1fr 1fr;} .cups{grid-template-columns:1fr;} }
-</style>
+<title>Ch.1 ドリップ基礎の総まとめ — Brewers Lab</title>
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
+<script src="app.js"></script>
+<script>if(!BrewersLab.Auth.require()){}else BrewersLab.renderNav('ch1');</script>
+
 <div class="wrap">
-  <header>
-    <p class="eyebrow">Brewers Lab · Chapter 1</p>
-    <h1>濃度と抽出率は、別の話<span class="sub">Concentration ≠ Extraction — 変数を1つだけ動かして体感する</span></h1>
+  <header class="page">
+    <p class="eyebrow">Chapter 1</p>
+    <h1>ドリップ基礎の総まとめ</h1>
+    <p class="lede">慣れている人ほど、無意識に飛ばしている工程がある。ここでは「なぜそうするのか」を一度すべて言語化し直す。基礎の再点検。</p>
   </header>
 
-  <!-- CONTROLS -->
-  <section class="panel">
-    <h2>① 操作する</h2>
-    <div class="ctrl">
-      <label>粉量 <b><span id="doseV">15.0</span> g</b></label>
-      <input type="range" id="dose" min="10" max="30" step="0.5" value="15">
-    </div>
-    <div class="ctrl">
-      <label>湯量 <b><span id="waterV">250</span> g</b></label>
-      <input type="range" id="water" min="150" max="500" step="5" value="250">
-    </div>
-    <div class="ctrl">
-      <label>挽き目（左＝細かい / 右＝粗い） <b id="grindV">中</b></label>
-      <input type="range" id="grind" min="0" max="100" step="1" value="50">
-      <div class="note" style="margin-top:4px;">※ 総抽出時間や撹拌でも抽出率は動く。ここでは「挽き目」を抽出率の代理変数として単純化（仮説モデル）。</div>
-    </div>
-  </section>
+  <h2>1. 道具のセレクション</h2>
+  <p>器具は味の方向性を決める。日本でハンドドリップに使われる代表器具と、それぞれの「味の素直な方向」。</p>
+  <table>
+    <tr><th>器具</th><th>形状</th><th>抽出の傾向</th><th>得意な豆</th></tr>
+    <tr><td>HARIO V60</td><td>円錐・大穴・スパイラル</td><td>湯抜けが速い。注ぎ方で変化大。クリーンに振りやすい。</td><td>浅煎り〜中煎り全般</td></tr>
+    <tr><td>HARIO Switch</td><td>V60＋浸漬切替</td><td>浸漬モードで甘さ・ボディが乗る。中煎り以上で安定。</td><td>中煎り〜深煎り</td></tr>
+    <tr><td>Kalita ウェーブ</td><td>台形・3つ穴・ウェーブ</td><td>湯量や注ぎが揺れても結果が大きくブレない。</td><td>初心者〜中煎り</td></tr>
+    <tr><td>ORIGAMI</td><td>円錐・大穴・蛇腹</td><td>フィルター次第。アバカで甘み、ウェーブでバランス。</td><td>浅〜中煎りの華やか系</td></tr>
+    <tr><td>KONO 名門</td><td>円錐・小穴</td><td>湯抜けが遅く、点滴抽出で深い甘み。</td><td>中深煎り〜深煎り</td></tr>
+    <tr><td>CHEMEX</td><td>砂時計・厚手フィルター</td><td>クリーン、油分・微粉が極少。さっぱり明るく。</td><td>浅〜中煎り、大容量</td></tr>
+  </table>
+  <div class="note"><b>覚えておくと一生使える原則。</b> 「穴が大きい・湯抜けが速い」器具は<u>注ぎ方の影響が大きい</u>＝技術次第。「湯抜けが遅い／浸漬寄り」器具は<u>結果が安定しやすい</u>＝レシピ次第。今日の自分の目的でどちらかを選ぶ。</div>
 
-  <!-- READOUTS -->
-  <section class="panel">
-    <h2>② 観察する</h2>
-    <div class="readouts">
-      <div class="ro"><div class="k">レシオ</div><div class="v">1:<span id="ratioV">16.7</span></div><div class="u">粉:湯</div></div>
-      <div class="ro"><div class="k">濃度 TDS目安</div><div class="v"><span id="tdsV">1.30</span></div><div class="u">% 推定</div></div>
-      <div class="ro"><div class="k">抽出率</div><div class="v"><span id="extV">20.0</span></div><div class="u">% 推定</div></div>
-    </div>
-    <div class="zonebar"><div class="marker" id="zmark" style="left:50%"></div></div>
-    <div class="zonelabels"><span>未抽出</span><span>適正 18–22%</span><span>過抽出</span></div>
-  </section>
+  <h3>フィルターは器具と同じくらい味を変える</h3>
+  <table>
+    <tr><th>フィルター</th><th>特徴</th><th>味への影響</th></tr>
+    <tr><td>白（漂白）</td><td>紙臭がほぼない</td><td>クリーン。標準。</td></tr>
+    <tr><td>みさらし（無漂白）</td><td>すすぎ必須（紙臭）</td><td>すすぎ後はやや厚みが残る印象。</td></tr>
+    <tr><td>アバカ（マニラ麻）</td><td>繊維が太く湯抜けが速い</td><td>甘さ・ボディが乗りやすい。CAFEC が代表。</td></tr>
+    <tr><td>CAFEC TH/TF/FC</td><td>焙煎度別の厚み</td><td>焙煎度に合わせて流速をマッチング。</td></tr>
+    <tr><td>金属フィルター</td><td>紙を使わない</td><td>油分・微粉が抜け、コク・ボディ最大。掃除手間。</td></tr>
+  </table>
 
-  <!-- MAP -->
-  <section class="panel">
-    <h2>③ コーヒー抽出コントロールチャート</h2>
-    <div class="mapwrap">
-      <svg id="map" viewBox="0 0 460 320" role="img" aria-label="抽出率×濃度マップ">
-        <!-- plotting area: x = extraction 14-26%, y = TDS 0.9-1.7% -->
-        <!-- golden cup box -->
-        <rect id="goldbox" fill="#c08a3e" fill-opacity="0.18" stroke="#c08a3e" stroke-width="1.5"/>
-        <!-- grid + axes -->
-        <g id="grid" stroke="#c9bca3" stroke-width="1"></g>
-        <line id="xaxis" stroke="#1a1410" stroke-width="1.5"/>
-        <line id="yaxis" stroke="#1a1410" stroke-width="1.5"/>
-        <text x="230" y="312" text-anchor="middle" font-size="11" fill="#7a6e5c">抽出率 Extraction %  →</text>
-        <text x="14" y="160" text-anchor="middle" font-size="11" fill="#7a6e5c" transform="rotate(-90 14 160)">濃度 TDS %  →</text>
-        <text id="goldlabel" font-size="10" fill="#9a6b22" font-weight="700">ゴールデンカップ</text>
-        <!-- points -->
-        <g id="cupA"></g>
-        <g id="cupB"></g>
-        <circle id="liveDot" r="7" fill="#1a1410" stroke="#f5efe4" stroke-width="2"/>
-      </svg>
-    </div>
-    <div class="verdict" id="verdict">—</div>
-  </section>
+  <h2>2. 注ぎの「3要素」</h2>
+  <p>注ぎ方は感覚で語られがちだが、分解すると次の3つしかない。</p>
+  <ol>
+    <li><b>注湯の太さ・速さ</b>　粉に与える物理的な力。撹拌の強さ＝抽出効率を直接動かす。</li>
+    <li><b>湯の動き（軌道）</b>　中央点滴／スパイラル／全体浸し。粉層全体に均一に湯が触れるかが決まる。</li>
+    <li><b>分割（回数・タイミング）</b>　全湯量を何回に分け、各間隔をどう取るか。撹拌の総量と接触時間の配分。</li>
+  </ol>
+  <div class="panel">
+    <div class="lab">代表的な注湯パターン</div>
+    <table style="margin:0">
+      <tr><th>パターン</th><th>狙い</th><th>相性</th></tr>
+      <tr><td>1投（一気）</td><td>シンプル・短時間・浸漬寄り</td><td>Switch・浸漬器具</td></tr>
+      <tr><td>2投（蒸らし＋本投1回）</td><td>標準・短時間で甘さ重視</td><td>中深〜深煎り</td></tr>
+      <tr><td>3投（4:6の簡易版）</td><td>バランス調整しやすい</td><td>万能</td></tr>
+      <tr><td>4:6メソッド（5投）</td><td>前半4割で味の方向、後半6割で濃度</td><td>浅〜中煎り、再現性重視</td></tr>
+      <tr><td>連続注ぎ</td><td>湯量を切らさず流路を作る</td><td>短時間で軽やかに</td></tr>
+    </table>
+  </div>
 
-  <!-- COMPARE -->
-  <section class="panel">
-    <h2>④ 2杯を比較する</h2>
-    <div class="btnrow">
-      <button onclick="record('A')">この設定を A杯として記録</button>
-      <button onclick="record('B')">この設定を B杯として記録</button>
-      <button onclick="clearCups()">クリア</button>
-    </div>
-    <div class="cups">
-      <div class="cup empty" id="cupAbox">A杯：未記録</div>
-      <div class="cup empty" id="cupBbox">B杯：未記録</div>
-    </div>
-    <p class="hint" id="compareHint">2杯記録すると、どの変数が動いたかを比較表示します。</p>
-  </section>
+  <h2>3. 蒸らし（ブルーム）の正体</h2>
+  <p>焙煎で豆に蓄えられた二酸化炭素を、最初の少量の湯で抜く工程。これをしないと、後の湯がガスに弾かれて粉全体に行き渡らず、抽出にムラが出る。</p>
+  <ul>
+    <li><b>湯量の目安</b>：粉の <code>2〜3倍</code>。15gなら30〜45g。</li>
+    <li><b>時間の目安</b>：<code>30〜45秒</code>。新鮮な豆ほどよく膨らみ、長めに待つ価値がある。</li>
+    <li><b>合図</b>：膨らみが収まり、表面の動きが止まったら次の注湯へ。</li>
+  </ul>
+  <div class="caveat">焙煎から日が経った豆はあまり膨らまない。膨らまないからといって悪い豆とは限らないが、ガスの少なさは「焙煎日からの経過」のサインとして読む。</div>
 
-  <!-- DIAGNOSE -->
-  <section class="panel">
-    <h2>⑤ 診断と次の実験</h2>
-    <div class="btnrow">
-      <button class="primary" onclick="diagnose()">診断する</button>
-    </div>
-    <div class="diag" id="diagOut"><span class="note">「診断する」を押すと、未抽出/過抽出の自己診断と次の一手を表示します。</span></div>
+  <h2>4. 一杯の手順テンプレート</h2>
+  <div class="panel">
+    <ol>
+      <li><b>豆を計る</b>（例: 15g）</li>
+      <li><b>湯を沸かす</b>（焙煎度に応じて 88〜95℃ に調整）</li>
+      <li><b>フィルターをすすぐ</b>（紙臭抜き＋器具を温める）</li>
+      <li><b>挽く</b>（中細を基準に、豆と器具で微調整）</li>
+      <li><b>セット</b>（粉を平らに、軽くドリッパーをトントン）</li>
+      <li><b>蒸らし</b>（粉の2〜3倍の湯、30〜45秒）</li>
+      <li><b>本投</b>（決めた注湯パターンで分割）</li>
+      <li><b>落ち切るのを待つ</b>（目標時間内に収まるか確認）</li>
+      <li><b>サーバを軽く回して均一化</b>→注ぐ</li>
+      <li><b>飲んで記録する</b>（Ch.2の言語化、Ch.3で記録保存）</li>
+    </ol>
+  </div>
 
-    <div class="sendbox">
-      <textarea id="reflect" placeholder="振り返りメモ（任意）：どんな味だった？ 狙いは？"></textarea>
-      <div class="btnrow" style="margin-top:8px;">
-        <button class="primary" onclick="sendToClaude()">振り返りをClaudeに送る</button>
-      </div>
-      <p class="hint">※ ボタンを押すと現在の数値＋メモがチャットに送られ、フィードバックが返ります。</p>
-    </div>
-  </section>
+  <h2>5. 「再現性」が成長の入り口</h2>
+  <p>同じ条件で淹れて同じ味になるか。これが取れるようになって初めて、変数を動かしたときの差が「変数のせい」と言えるようになる。</p>
+  <ul>
+    <li>レシピを書き留めずに淹れない。<b>最低でも</b>「豆名・粉量・湯量・湯温・挽き目・総時間」を記録。</li>
+    <li>同じレシピを連続3回淹れる「ベースライン取り」を時々やる。</li>
+    <li>毎回 Polaris のタイマーで <b>総抽出時間</b> を確認する。10秒以上ブレるなら何かが揺れている。</li>
+  </ul>
+
+  <div class="panel key">
+    <h3>このページの結論</h3>
+    <ul>
+      <li>器具とフィルターで「味の方向の上限」が決まる。豆や好みで選ぶ。</li>
+      <li>注ぎは「太さ・軌道・分割」の3要素に分解できる。</li>
+      <li>蒸らしは儀式ではなく、ガス抜きと均一化という機能がある。</li>
+      <li>再現性が取れないうちは、何を変えても結論が出せない。記録を残す。</li>
+    </ul>
+  </div>
+
+  <h2>このページの理解度を Claude に確認してもらう</h2>
+  <p>下のプロンプトをコピーして新しいClaudeチャットに貼り、続けて「自分のドリップの手順」を一通り説明すると、抜けや改善ポイントを基礎の専門家として返してくれる。</p>
+  <div class="promptbox" id="prompt1">あなたはハンドドリップ指導歴の長いコーヒー基礎の専門家です。SCA Brewing Handbook と『James Hoffmann: The World Atlas of Coffee』を主な拠り所にし、日本のドリップ文化（粕谷哲、川野優馬、CAFEC、HARIO の文脈）にも詳しい立場で答えてください。
+
+私はある程度ハンドドリップに慣れた中級者で、Brewers Lab Chapter 1「ドリップ基礎の総まとめ」を学習しました。
+
+これから私が「自分の普段のドリップ手順」を順に説明します。あなたは：
+1. 各工程に「なぜそうしているか」が言語化できているかをチェック
+2. 抜け落ちている工程・無意識化している工程を指摘
+3. 「再現性」の観点で弱い箇所があれば名指しで指摘
+4. 具体的な改善アクションを3つ以内に絞って提案
+
+を行ってください。断定しすぎず、流派による違いがある点は「流派Aではこう、流派Bではこう」と並べて示してください。
+
+では、私の手順を説明します：
+（ここに自分の手順を書いてください）<button class="copy" onclick="BrewersLab.copyToClipboard(document.getElementById('prompt1').firstChild.textContent, this)">コピー</button></div>
+
+  <div class="btnrow">
+    <a class="btn primary" href="ch2.html">次へ：味の言語化 →</a>
+    <a class="btn" href="ch3.html">レシピ開発に進む</a>
+  </div>
 </div>
-
-<script>
-// ---------- model (hypothesis-level, not lab-measured) ----------
-// extraction% estimated from grind (finer -> higher extraction)
-// grind slider 0(fine)..100(coarse) -> extraction ~26%..14%
-function extractionPct(grind){ return 26 - (grind/100)*12; } // 26..14
-// TDS estimated: solubles mass = dose*ext% ; TDS = solubles / (water + dose absorbed by grounds approx)
-function tdsPct(dose, water, ext){
-  const solubles = dose * (ext/100);
-  const retained = dose * 2.0; // grounds retain ~2x their weight in water
-  const beverage = Math.max(water - retained, water*0.6);
-  return (solubles / beverage) * 100;
-}
-function grindLabel(g){
-  if(g<20) return "極細"; if(g<40) return "細"; if(g<60) return "中";
-  if(g<80) return "粗"; return "極粗";
-}
-
-const $ = id => document.getElementById(id);
-let cups = {A:null, B:null};
-
-// map coordinate transforms
-const X0=40,X1=440,Y0=40,Y1=280;          // svg plot box
-const EXTmin=14,EXTmax=26, TDSmin=0.9,TDSmax=1.7;
-const sx = e => X0 + (e-EXTmin)/(EXTmax-EXTmin)*(X1-X0);
-const sy = t => Y1 - (t-TDSmin)/(TDSmax-TDSmin)*(Y1-Y0);
-
-function drawMapStatic(){
-  $("xaxis").setAttribute("x1",X0);$("xaxis").setAttribute("y1",Y1);
-  $("xaxis").setAttribute("x2",X1);$("xaxis").setAttribute("y2",Y1);
-  $("yaxis").setAttribute("x1",X0);$("yaxis").setAttribute("y1",Y0);
-  $("yaxis").setAttribute("x2",X0);$("yaxis").setAttribute("y2",Y1);
-  // golden box: ext 18-22, tds 1.15-1.45
-  const gx=sx(18),gw=sx(22)-sx(18),gy=sy(1.45),gh=sy(1.15)-sy(1.45);
-  const gb=$("goldbox");
-  gb.setAttribute("x",gx);gb.setAttribute("y",gy);gb.setAttribute("width",gw);gb.setAttribute("height",gh);
-  $("goldlabel").setAttribute("x",gx+4);$("goldlabel").setAttribute("y",gy-6);
-  // grid lines
-  const g=$("grid");g.innerHTML="";
-  for(let e=16;e<=24;e+=2){const x=sx(e);
-    g.innerHTML+=`<line x1="${x}" y1="${Y0}" x2="${x}" y2="${Y1}" stroke-opacity="0.4"/>`+
-    `<text x="${x}" y="${Y1+14}" text-anchor="middle" font-size="9" fill="#7a6e5c">${e}</text>`;}
-  for(let t=1.0;t<=1.6;t+=0.2){const y=sy(t);
-    g.innerHTML+=`<line x1="${X0}" y1="${y}" x2="${X1}" y2="${y}" stroke-opacity="0.4"/>`+
-    `<text x="${X0-6}" y="${y+3}" text-anchor="end" font-size="9" fill="#7a6e5c">${t.toFixed(1)}</text>`;}
-}
-
-function zoneOf(ext){ if(ext<18) return "u"; if(ext>22) return "o"; return "g"; }
-
-function update(){
-  const dose=+$("dose").value, water=+$("water").value, grind=+$("grind").value;
-  const ext=extractionPct(grind);
-  const tds=tdsPct(dose,water,ext);
-  const ratio=water/dose;
-  $("doseV").textContent=dose.toFixed(1);
-  $("waterV").textContent=water;
-  $("grindV").textContent=grindLabel(grind);
-  $("ratioV").textContent=ratio.toFixed(1);
-  $("tdsV").textContent=tds.toFixed(2);
-  $("extV").textContent=ext.toFixed(1);
-  // zone marker: map ext 14..26 to 0..100%
-  $("zmark").style.left = ((ext-14)/12*100).toFixed(1)+"%";
-  // live dot
-  const cx=Math.max(X0,Math.min(X1,sx(ext))), cy=Math.max(Y0,Math.min(Y1,sy(tds)));
-  $("liveDot").setAttribute("cx",cx);$("liveDot").setAttribute("cy",cy);
-  // verdict
-  const z=zoneOf(ext); const v=$("verdict");
-  const concWord = tds<1.15?"薄い":tds>1.45?"濃い":"適正レンジ";
-  v.className="verdict "+z;
-  const zw = z==="u"?"未抽出ぎみ":z==="o"?"過抽出ぎみ":"適正抽出";
-  v.textContent=`抽出：${zw}（${ext.toFixed(1)}%） / 濃度：${concWord}（TDS ${tds.toFixed(2)}%）`;
-  return {dose,water,grind,ext,tds,ratio};
-}
-
-function dotFor(g,id,color,label){
-  const s=update.last||update();
-}
-function plotCup(slot){
-  const c=cups[slot]; const g=$("cup"+slot); if(!c){g.innerHTML="";return;}
-  const x=sx(c.ext),y=sy(c.tds),col=slot==="A"?"#5b8aa6":"#9a3b2e";
-  g.innerHTML=`<circle cx="${x}" cy="${y}" r="6" fill="${col}" stroke="#f5efe4" stroke-width="2"/>`+
-  `<text x="${x+9}" y="${y+4}" font-size="11" font-weight="700" fill="${col}">${slot}</text>`;
-}
-
-function record(slot){
-  const s=update();
-  cups[slot]={...s};
-  const box=$("cup"+slot+"box");
-  box.className="cup";
-  box.innerHTML=`<h3>${slot}杯</h3>`+
-    `<div class="row"><span>レシオ</span><span>1:${s.ratio.toFixed(1)}</span></div>`+
-    `<div class="row"><span>TDS</span><span>${s.tds.toFixed(2)}%</span></div>`+
-    `<div class="row"><span>抽出率</span><span>${s.ext.toFixed(1)}%</span></div>`+
-    `<div class="row"><span>挽き目</span><span>${grindLabel(s.grind)}</span></div>`;
-  plotCup(slot);
-  compareCups();
-}
-function clearCups(){
-  cups={A:null,B:null};
-  ["A","B"].forEach(s=>{const b=$("cup"+s+"box");b.className="cup empty";b.textContent=s+"杯：未記録";$("cup"+s).innerHTML="";});
-  $("compareHint").textContent="2杯記録すると、どの変数が動いたかを比較表示します。";
-}
-function compareCups(){
-  if(!cups.A||!cups.B){$("compareHint").textContent="もう1杯記録すると比較できます。";return;}
-  const a=cups.A,b=cups.B; const diffs=[];
-  if(a.dose!==b.dose)diffs.push(`粉量 ${a.dose}→${b.dose}g`);
-  if(a.water!==b.water)diffs.push(`湯量 ${a.water}→${b.water}g`);
-  if(a.grind!==b.grind)diffs.push(`挽き目 ${grindLabel(a.grind)}→${grindLabel(b.grind)}`);
-  const dExt=(b.ext-a.ext).toFixed(1), dTds=(b.tds-a.tds).toFixed(2);
-  let msg=`変えた変数：${diffs.length?diffs.join(" / "):"なし（同条件）"}。 → 抽出率 ${dExt>0?"+":""}${dExt}% / TDS ${dTds>0?"+":""}${dTds}%。`;
-  if(diffs.length>1)msg+=" ⚠ 2つ以上動いています。原因を切り分けるなら一度に1変数だけ。";
-  $("compareHint").textContent=msg;
-}
-
-function diagnose(){
-  const s=update(); const z=zoneOf(s.ext);
-  let title,clue,next;
-  if(z==="u"){
-    title="🔵 未抽出ぎみ（抽出率 "+s.ext.toFixed(1)+"%）";
-    clue="酸が立ちすぎる・塩気・とがった印象・後味が短い・水っぽい甘さの欠如。";
-    next=["挽き目を1段細かく（抽出率↑を狙う）","総抽出時間を少し延ばす","湯温を上げる / 撹拌を1回足す","※ 変えるのは1つだけ。次をA杯と比較。"];
-  } else if(z==="o"){
-    title="🔴 過抽出ぎみ（抽出率 "+s.ext.toFixed(1)+"%）";
-    clue="苦味・渋み（収れん感）・ドライ/焦げ感・後味が重く濁る。";
-    next=["挽き目を1段粗く（抽出率↓を狙う）","総抽出時間を短く","湯温を下げる / 撹拌を減らす","※ 変えるのは1つだけ。次をA杯と比較。"];
-  } else {
-    title="🟡 抽出は適正レンジ（"+s.ext.toFixed(1)+"%）";
-    clue="甘さと酸のバランス、クリーンな後味が出やすい帯。";
-    const tw=s.tds<1.15?"やや薄い→濃度を上げたいなら粉量↑か湯量↓":s.tds>1.45?"やや濃い→濃度を下げたいなら湯量↑か粉量↓":"濃度も適正。基準のど真ん中。";
-    next=["濃度の微調整は『レシオ』で："+tw,"抽出率はそのままに、濃度だけ動かす実験を","気に入った点を言語化して記録"];
-  }
-  let html=`<div class="verdict ${z}" style="margin-top:0">${title}</div>`+
-    `<p style="margin:8px 0 4px"><b>この帯で出やすい味：</b>${clue}</p>`+
-    `<p style="margin:4px 0"><b>次の一手（仮説）：</b></p><ul>`+
-    next.map(n=>`<li>${n}</li>`).join("")+`</ul>`;
-  $("diagOut").innerHTML=html;
-}
-
-function sendToClaude(){
-  const s=update(); const z=zoneOf(s.ext);
-  const zw=z==="u"?"未抽出ぎみ":z==="o"?"過抽出ぎみ":"適正";
-  const memo=$("reflect").value.trim();
-  let txt=`【Ch.1 振り返り】\n`+
-    `粉量 ${s.dose}g / 湯量 ${s.water}g / レシオ 1:${s.ratio.toFixed(1)}\n`+
-    `挽き目 ${grindLabel(s.grind)} / 推定抽出率 ${s.ext.toFixed(1)}%（${zw}） / 推定TDS ${s.tds.toFixed(2)}%\n`;
-  if(cups.A&&cups.B){
-    txt+=`A杯: 抽出${cups.A.ext.toFixed(1)}% TDS${cups.A.tds.toFixed(2)}% / B杯: 抽出${cups.B.ext.toFixed(1)}% TDS${cups.B.tds.toFixed(2)}%\n`;
-  }
-  if(memo)txt+=`メモ：${memo}\n`;
-  txt+=`この結果について、未抽出/過抽出の見立てと次の実験提案をください。`;
-  if(window.sendPrompt){ sendPrompt(txt); }
-  else { navigator.clipboard?.writeText(txt); alert("チャットに送信できない環境のため、内容をコピーしました。貼り付けて送ってください。\n\n"+txt); }
-}
-
-["dose","water","grind"].forEach(id=>$(id).addEventListener("input",update));
-drawMapStatic();
-update();
-</script>
 </body>
 </html>

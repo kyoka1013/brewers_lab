@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>記録 — Brewers Lab</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<script src="app.js"></script>
+<script>if(!BrewersLab.Auth.require()){}else BrewersLab.renderNav('log');</script>
+
+<div class="wrap">
+  <header class="page">
+    <p class="eyebrow">Log</p>
+    <h1>ドリップ記録</h1>
+    <p class="lede">これまで保存した抽出記録の一覧。クリックで詳細＆Claude用プロンプト生成。一括エクスポート・別端末への引っ越しもここから。</p>
+  </header>
+
+  <div class="panel">
+    <h3>データ管理</h3>
+    <div class="btnrow">
+      <button class="ghost" onclick="exportJson()">📥 全データをJSONで書き出し</button>
+      <button class="ghost" onclick="document.getElementById('importFile').click()">📤 JSONを読み込み（マージ上書き）</button>
+      <input type="file" id="importFile" accept=".json" style="display:none" onchange="importJson(this)">
+      <button class="danger" onclick="clearAll()">⚠ 全データ削除</button>
+    </div>
+    <div id="logMsg" class="small" style="margin-top:10px"></div>
+  </div>
+
+  <h2>記録一覧 <span class="small muted" id="count"></span></h2>
+  <div id="list"></div>
+
+  <div class="btnrow">
+    <a class="btn ghost" href="ch3.html">← レシピ開発に戻る</a>
+    <a class="btn primary" href="recipes.html">マイレシピへ →</a>
+  </div>
+</div>
+
+<script>
+(function(){
+  var BL=BrewersLab;
+  function render(){
+    var brews=BL.DB.listBrews();
+    document.getElementById('count').textContent='（'+brews.length+'件）';
+    var list=document.getElementById('list'); list.innerHTML='';
+    if(brews.length===0){
+      list.appendChild(BL.el('div',{class:'panel'},'まだ記録がありません。Ch.3 から記録を始めましょう。'));
+      return;
+    }
+    brews.forEach(function(b){
+      var card=BL.el('div',{class:'panel'});
+      var head=BL.el('div',{style:{display:'flex',justifyContent:'space-between',gap:'10px',flexWrap:'wrap'}});
+      head.appendChild(BL.el('div',{},[
+        BL.el('div',{style:{fontWeight:700,fontSize:'15px'}},b.beanName||'(no name)'),
+        BL.el('div',{class:'small muted'},BL.fmtDate(b.createdAt))
+      ]));
+      var pill=BL.el('span',{class:'pill solid',style:{alignSelf:'flex-start'}},b.diag||'未診断');
+      head.appendChild(pill);
+      card.appendChild(head);
+
+      // key info
+      var info=BL.el('div',{class:'small muted',style:{marginTop:'8px'}});
+      var parts=[];
+      if(b.dripper) parts.push('🫗 '+b.dripper);
+      if(b.grind) parts.push('挽 '+b.grind);
+      if(b.temp) parts.push(b.temp);
+      if(b.ratio) parts.push('レシオ '+b.ratio);
+      if(b.totalTime) parts.push('総時間 '+b.totalTime);
+      info.textContent=parts.join(' · ');
+      card.appendChild(info);
+
+      // taste
+      if(b.acid||b.sweet||b.bitter){
+        var t=BL.el('div',{class:'small',style:{marginTop:'6px'}});
+        t.textContent='味: 酸'+b.acid+' / 甘'+b.sweet+' / 苦'+b.bitter+' / 体'+b.body+' / 余'+b.after+' / 総'+b.overall;
+        card.appendChild(t);
+      }
+      if(b.notes){
+        card.appendChild(BL.el('div',{class:'small',style:{marginTop:'6px',fontStyle:'italic'}},b.notes));
+      }
+
+      var actions=BL.el('div',{class:'btnrow'});
+      actions.appendChild(BL.el('button',{class:'accent',onclick:function(){ genPrompt(b); }},'✉ Claudeに相談'));
+      actions.appendChild(BL.el('button',{class:'ghost',onclick:function(){ showFull(b); }},'詳細表示'));
+      actions.appendChild(BL.el('button',{class:'danger',onclick:function(){
+        if(confirm('この記録を削除しますか？')){ BL.DB.deleteBrew(b.id); render(); }
+      }},'削除'));
+      card.appendChild(actions);
+
+      // expandable detail
+      var detail=BL.el('div',{style:{display:'none',marginTop:'10px',padding:'10px',background:'var(--paper)',borderRadius:'5px',fontSize:'12.5px'}});
+      Object.keys(b).forEach(function(k){
+        if(['id','createdAt'].indexOf(k)>=0) return;
+        if(b[k]==null||b[k]==='') return;
+        detail.appendChild(BL.el('div',{},[BL.el('b',{},k+': '),''+b[k]]));
+      });
+      card.appendChild(detail);
+      window['showFull_'+b.id]=function(){ detail.style.display=detail.style.display==='none'?'block':'none'; };
+
+      // prompt area
+      var promptBox=BL.el('div',{class:'promptbox',style:{display:'none',marginTop:'12px'}});
+      card.appendChild(promptBox);
+      card._promptBox=promptBox;
+
+      list.appendChild(card);
+
+      function showFull(b){ detail.style.display=detail.style.display==='none'?'block':'none'; }
+      function genPrompt(b){
+        var labels={
+          beanName:'豆', origin:'産地', variety:'品種', process:'精製', roast:'焙煎度', roastDate:'焙煎日',
+          dripper:'ドリッパー', filter:'フィルター', grinder:'グラインダー', water:'水',
+          dose:'粉量(g)', waterAmt:'湯量(g)', ratio:'レシオ',
+          grind:'挽き目', grindMemo:'挽き目メモ', temp:'湯温', bloom:'蒸らし時間',
+          pourPattern:'注湯パターン', pourSpeed:'注ぎ方', totalTime:'総抽出時間',
+          acid:'酸質(1-5)', sweet:'甘さ(1-5)', bitter:'苦味(1-5)', body:'ボディ(1-5)',
+          after:'余韻(1-5)', overall:'総合(1-5)', notes:'フレーバーメモ', diag:'自己診断'
+        };
+        var entry={};
+        Object.keys(labels).forEach(function(k){
+          if(b[k]!=null && b[k]!=='') entry[labels[k]]=b[k];
+        });
+        var prompt=BL.buildAdvisorPrompt(
+          '記録から相談',
+          'あなたは Brewers Cup 競技経験者のハンドドリップ・コーチです。SCA Brewing Handbook、Scott Rao、粕谷哲の 4:6 メソッドを拠り所に、日本のスペシャルティ文脈に詳しい立場で指導してください。',
+          entry
+        );
+        promptBox.style.display='block';
+        promptBox.innerHTML='';
+        promptBox.appendChild(document.createTextNode(prompt));
+        var copy=BL.el('button',{class:'copy',onclick:function(){
+          BL.copyToClipboard(prompt, copy);
+        }},'コピー');
+        promptBox.appendChild(copy);
+      }
+    });
+  }
+
+  window.exportJson=function(){
+    var data=BL.DB.exportAll(); if(!data) return;
+    var blob=new Blob([data],{type:'application/json'});
+    var url=URL.createObjectURL(blob);
+    var a=document.createElement('a');
+    a.href=url; a.download='brewerslab_'+BL.Auth.current()+'_'+Date.now()+'.json';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+  window.importJson=function(input){
+    var f=input.files[0]; if(!f) return;
+    var r=new FileReader();
+    r.onload=function(e){
+      if(BL.DB.importAll(e.target.result)){
+        document.getElementById('logMsg').textContent='✓ インポート完了';
+        document.getElementById('logMsg').style.color='var(--good)';
+        render();
+      } else {
+        document.getElementById('logMsg').textContent='✗ ファイル形式エラー';
+        document.getElementById('logMsg').style.color='var(--over)';
+      }
+    };
+    r.readAsText(f);
+  };
+  window.clearAll=function(){
+    if(!confirm('本当に全データを削除しますか？この操作は取り消せません。')) return;
+    if(!confirm('もう一度確認します。豆・記録・レシピ・お気に入りすべて消えます。よろしいですか？')) return;
+    BL.DB.clearAll(); render();
+    document.getElementById('logMsg').textContent='全データを削除しました';
+  };
+
+  render();
+})();
+</script>
+</body>
+</html>

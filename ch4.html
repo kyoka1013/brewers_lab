@@ -3,361 +3,121 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Brewers Lab Ch.4 — 湯温</title>
-<style>
-  :root{
-    --ink:#1a1614;
-    --paper:#f3ede4;
-    --line:#cabfae;
-    --cool:#2c5f7c;
-    --warm:#c1452a;
-    --hot:#e0651a;
-    --accent:#b8862f;
-    --t:60%;
-    --heat:#c1452a;
-    --heat-soft:#e0651a;
-  }
-  *{box-sizing:border-box;margin:0;padding:0}
-  body{
-    font-family:"Hiragino Sans","Yu Gothic",sans-serif;
-    background:var(--paper);
-    color:var(--ink);
-    line-height:1.6;
-    padding:28px 18px 80px;
-    transition:background .6s ease;
-  }
-  .wrap{max-width:760px;margin:0 auto}
-  .eyebrow{
-    font-size:11px;letter-spacing:.32em;text-transform:uppercase;
-    color:var(--accent);font-weight:700;margin-bottom:6px;
-  }
-  h1{
-    font-family:Georgia,"Times New Roman",serif;
-    font-size:38px;font-weight:400;letter-spacing:-.01em;
-    line-height:1.1;margin-bottom:4px;
-  }
-  h1 .deg{color:var(--heat);transition:color .6s ease}
-  .sub{font-size:14px;color:#6b5f50;margin-bottom:30px}
-  .card{
-    background:#fbf8f2;border:1px solid var(--line);
-    border-radius:4px;padding:24px;margin-bottom:20px;
-  }
-  .card h2{
-    font-family:Georgia,serif;font-size:17px;font-weight:400;
-    margin-bottom:4px;display:flex;align-items:baseline;gap:10px;
-  }
-  .card h2 .n{
-    font-size:11px;letter-spacing:.2em;color:var(--accent);font-weight:700;
-  }
-  .card .hint{font-size:12px;color:#8a7d6c;margin-bottom:18px}
-
-  /* thermometer slider */
-  .temp-readout{
-    font-family:Georgia,serif;font-size:64px;line-height:1;
-    text-align:center;margin:8px 0 2px;
-    color:var(--heat);transition:color .4s ease;
-  }
-  .temp-readout span{font-size:24px;color:#8a7d6c}
-  .temp-zone{
-    text-align:center;font-size:12px;letter-spacing:.15em;
-    color:#8a7d6c;margin-bottom:18px;min-height:16px;
-  }
-  input[type=range]{
-    -webkit-appearance:none;width:100%;height:10px;border-radius:5px;
-    background:linear-gradient(90deg,var(--cool),var(--accent) 55%,var(--hot));
-    outline:none;
-  }
-  input[type=range]::-webkit-slider-thumb{
-    -webkit-appearance:none;width:26px;height:26px;border-radius:50%;
-    background:#fbf8f2;border:3px solid var(--heat);cursor:pointer;
-    box-shadow:0 2px 6px rgba(0,0,0,.2);transition:border-color .4s;
-  }
-  input[type=range]::-moz-range-thumb{
-    width:26px;height:26px;border-radius:50%;
-    background:#fbf8f2;border:3px solid var(--heat);cursor:pointer;
-  }
-  .scale-marks{display:flex;justify-content:space-between;font-size:10px;color:#a89a86;margin-top:6px}
-
-  /* gauges */
-  .gauge{margin:16px 0}
-  .gauge .lab{display:flex;justify-content:space-between;font-size:13px;margin-bottom:5px}
-  .gauge .lab b{font-weight:600}
-  .gauge .lab .v{color:#8a7d6c;font-size:12px}
-  .bar{height:12px;background:#e8e0d2;border-radius:6px;overflow:hidden}
-  .fill{height:100%;border-radius:6px;transition:width .4s ease, background .4s ease}
-  .fill.bright{background:linear-gradient(90deg,#e8b84a,#f0d678)}
-  .fill.sweet{background:linear-gradient(90deg,#c98a3a,#e0a85a)}
-  .fill.body{background:linear-gradient(90deg,#7a4a2e,#a86a42)}
-  .fill.bitter{background:linear-gradient(90deg,#5a3528,#8a2e1a)}
-
-  /* roast selector */
-  .roasts{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
-  .roast-btn{
-    flex:1;min-width:64px;padding:10px 4px;border:1px solid var(--line);
-    background:#fbf8f2;border-radius:4px;cursor:pointer;text-align:center;
-    font-size:12px;transition:all .2s;
-  }
-  .roast-btn .swatch{display:block;width:100%;height:8px;border-radius:2px;margin-bottom:6px}
-  .roast-btn.active{border-color:var(--heat);background:#fff;box-shadow:0 0 0 1px var(--heat)}
-  .reco{
-    font-size:13px;padding:12px 14px;background:#f6efe2;border-left:3px solid var(--accent);
-    border-radius:0 4px 4px 0;
-  }
-  .reco b{color:var(--heat)}
-  .range-track{position:relative;height:24px;margin:14px 0 4px}
-  .range-track .base{position:absolute;top:9px;left:0;right:0;height:6px;border-radius:3px;
-    background:linear-gradient(90deg,var(--cool),var(--accent) 55%,var(--hot))}
-  .range-track .hi{position:absolute;top:5px;height:14px;border-radius:7px;
-    background:rgba(184,134,47,.35);border:2px solid var(--accent);transition:all .4s}
-  .range-track .marks{position:absolute;top:18px;left:0;right:0;display:flex;justify-content:space-between;font-size:9px;color:#a89a86}
-
-  /* experiment */
-  .row{display:flex;gap:14px}
-  .row .col{flex:1}
-  label.field{display:block;font-size:12px;color:#6b5f50;margin:10px 0 4px}
-  input[type=text],input[type=number],textarea,select{
-    width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:4px;
-    background:#fff;font-family:inherit;font-size:14px;color:var(--ink);
-  }
-  textarea{resize:vertical;min-height:60px}
-  .ab{display:flex;gap:14px}
-  .ab .side{flex:1;border:1px solid var(--line);border-radius:4px;padding:14px;background:#fbf8f2}
-  .ab .side h3{font-size:13px;font-weight:700;margin-bottom:2px}
-  .ab .side.a h3{color:var(--cool)}
-  .ab .side.b h3{color:var(--hot)}
-  .ab .side .fixed{font-size:11px;color:#8a7d6c;margin-bottom:8px}
-
-  .btn{
-    display:inline-block;padding:11px 20px;border:none;border-radius:4px;
-    background:var(--heat);color:#fff;font-size:14px;font-weight:600;
-    cursor:pointer;font-family:inherit;transition:opacity .2s;
-  }
-  .btn:hover{opacity:.88}
-  .btn.ghost{background:transparent;border:1px solid var(--line);color:var(--ink)}
-  .hyp{
-    margin-top:14px;padding:14px;border-radius:4px;background:#1a1614;color:#f3ede4;
-    font-size:13px;line-height:1.7;display:none;
-  }
-  .hyp.show{display:block}
-  .hyp b{color:#e0a85a}
-  .out{
-    margin-top:14px;padding:14px;border:1px dashed var(--line);border-radius:4px;
-    font-size:12px;white-space:pre-wrap;background:#f8f3ea;display:none;font-family:monospace;
-  }
-  .out.show{display:block}
-  .tag{font-size:10px;background:#e8e0d2;color:#6b5f50;padding:1px 7px;border-radius:10px;letter-spacing:.05em}
-</style>
+<title>Ch.4 豆を知る — Brewers Lab</title>
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
+<script src="app.js"></script>
+<script>if(!BrewersLab.Auth.require()){}else BrewersLab.renderNav('ch4');</script>
+
 <div class="wrap">
-  <div class="eyebrow">Brewers Lab · Chapter 04</div>
-  <h1>湯温 <span class="deg">—</span> 変数の独立した理解</h1>
-  <p class="sub">挽き目と時間を固定し、湯温だけを動かす。何が変わるかを、自分の舌で確かめる。</p>
+  <header class="page">
+    <p class="eyebrow">Chapter 4</p>
+    <h1>豆を知る</h1>
+    <p class="lede">同じ淹れ方でも、豆が変われば味は変わる。逆に、豆を見て「どう淹れるか」を予測できるようになると、初めて触る豆でも最初の一杯が遠回りしない。</p>
+  </header>
 
-  <!-- SLIDER + GAUGES -->
-  <div class="card">
-    <h2><span class="n">01</span> 湯温を動かす</h2>
-    <p class="hint">スライダーを動かすと、味の4要素が連動します（一般的傾向の<span class="tag">仮説モデル</span>。実際の味は豆・抽出で変動）</p>
-    <div class="temp-readout" id="readout">92<span>℃</span></div>
-    <div class="temp-zone" id="zone"></div>
-    <input type="range" id="slider" min="80" max="100" value="92" step="1">
-    <div class="scale-marks"><span>80</span><span>85</span><span>90</span><span>95</span><span>100</span></div>
-
-    <div class="gauge">
-      <div class="lab"><b>酸質の明るさ</b><span class="v" id="v-bright"></span></div>
-      <div class="bar"><div class="fill bright" id="f-bright"></div></div>
-    </div>
-    <div class="gauge">
-      <div class="lab"><b>甘さの出方</b><span class="v" id="v-sweet"></span></div>
-      <div class="bar"><div class="fill sweet" id="f-sweet"></div></div>
-    </div>
-    <div class="gauge">
-      <div class="lab"><b>ボディ感</b><span class="v" id="v-body"></span></div>
-      <div class="bar"><div class="fill body" id="f-body"></div></div>
-    </div>
-    <div class="gauge">
-      <div class="lab"><b>苦味・過抽出リスク</b><span class="v" id="v-bitter"></span></div>
-      <div class="bar"><div class="fill bitter" id="f-bitter"></div></div>
-    </div>
+  <h2>1. 産地で何が決まるか</h2>
+  <p>産地は「気候・標高・品種・精製・伝統」のすべてを束ねたラベル。代表産地と典型像を持っておくと、未知の豆に出会ったときの仮説の出発点になる。</p>
+  <div class="panel">
+    <table>
+      <tr><th>産地</th><th>典型像</th><th>抽出方針の出発点</th></tr>
+      <tr><td>エチオピア（イルガチェフェ、シダモなど）</td><td>フローラル、シトラス、紅茶様。ヘイルーム品種。</td><td>浅煎り中心、92〜94℃、明るさを引き出す方向</td></tr>
+      <tr><td>ケニア</td><td>強い酸（ブラックカラント、トマト）、ジューシー、SL28/34</td><td>浅〜中浅、温度高め、酸の質を活かす</td></tr>
+      <tr><td>ルワンダ・ブルンジ</td><td>クリーン、紅茶様、シルキーボディ</td><td>浅〜中浅、エチオピア寄りの設計</td></tr>
+      <tr><td>コロンビア</td><td>バランス、ナッツ、キャラメル、品種多様</td><td>中煎り基準、汎用性高い</td></tr>
+      <tr><td>ブラジル</td><td>ナッツ、チョコ、低酸、安定</td><td>中〜中深、ボディ重視。ブレンドベース</td></tr>
+      <tr><td>グアテマラ</td><td>チョコ、スパイス、火山土壌の複雑さ</td><td>中煎り、しっかり目の抽出</td></tr>
+      <tr><td>コスタリカ</td><td>クリーン、ハニー精製の名産地</td><td>精製で味が変わる。中煎り中心</td></tr>
+      <tr><td>パナマ（ゲイシャ）</td><td>強烈な花香、ジャスミン、ベルガモット</td><td>浅煎り、抽出を引き出しすぎないバランス</td></tr>
+      <tr><td>インドネシア（マンデリン）</td><td>アーシー、スパイス、低酸、重いボディ</td><td>中深〜深、コクを引き出す方向</td></tr>
+      <tr><td>イエメン</td><td>独特の野性味、発酵感、ドライフルーツ</td><td>浅〜中浅、ナチュラル多。設計が読みづらい個性派</td></tr>
+    </table>
+    <div class="caveat">この表は「典型像」。同じ国でも農園・品種・精製で大きく振れます。「ケニア=酸が強い」は出発点に過ぎず、ロースターの設計でいくらでも変わる。</div>
   </div>
 
-  <!-- ROAST -->
-  <div class="card">
-    <h2><span class="n">02</span> 焙煎度から推奨レンジを見る</h2>
-    <p class="hint">焙煎が深いほど成分が溶けやすく、低めの湯温が推奨される傾向（<span class="tag">仮説/一般傾向</span>）</p>
-    <div class="roasts" id="roasts"></div>
-    <div class="range-track">
-      <div class="base"></div>
-      <div class="hi" id="hi"></div>
-      <div class="marks"><span>80</span><span>85</span><span>90</span><span>95</span><span>100</span></div>
-    </div>
-    <div class="reco" id="reco">焙煎度を選んでください。</div>
+  <h2>2. 品種で何が決まるか</h2>
+  <p>アラビカ種の中の代表的な品種と、その典型キャラクター。</p>
+  <div class="panel">
+    <table>
+      <tr><th>品種</th><th>キャラクター</th><th>備考</th></tr>
+      <tr><td>ティピカ</td><td>ベース。クリーン、繊細</td><td>多くの品種の祖</td></tr>
+      <tr><td>ブルボン</td><td>甘さと丸み</td><td>派生品種多数</td></tr>
+      <tr><td>カトゥアイ / カトゥーラ</td><td>ブルボン由来、生産性重視</td><td>中南米で広く栽培</td></tr>
+      <tr><td>SL28 / SL34</td><td>ケニア独自、強烈な酸とジューシーさ</td><td>ケニアの代名詞</td></tr>
+      <tr><td>ゲイシャ</td><td>花香、ベルガモット、特異な明るさ</td><td>パナマで開花した品種</td></tr>
+      <tr><td>パカマラ</td><td>大粒、複雑、エルサルバドル発</td><td>競技でも人気</td></tr>
+      <tr><td>ヘイルーム（エチオピア在来）</td><td>多様な野生品種の総称</td><td>名前のないキャラクター</td></tr>
+      <tr><td>カスティージョ / カトゥンビータ</td><td>耐病性重視のコロンビア品種</td><td>生産性とのトレードオフ議論あり</td></tr>
+    </table>
   </div>
 
-  <!-- A/B EXPERIMENT -->
-  <div class="card">
-    <h2><span class="n">03</span> 湯温だけ変えたA/B記録</h2>
-    <p class="hint">挽き目・時間・レシオは固定。動かすのは湯温のみ。</p>
-    <label class="field">固定した条件（挽き目 / 総時間 / レシオ）</label>
-    <input type="text" id="fixed" placeholder="例: 中細 / 2:45 / 1:15">
-    <div class="ab" style="margin-top:14px">
-      <div class="side a">
-        <h3>A</h3>
-        <div class="fixed">低めの湯温</div>
-        <label class="field">湯温 ℃</label>
-        <input type="number" id="a-temp" placeholder="88">
-        <label class="field">味の印象</label>
-        <textarea id="a-note" placeholder="酸・甘・ボディ・苦味・後味…"></textarea>
-      </div>
-      <div class="side b">
-        <h3>B</h3>
-        <div class="fixed">高めの湯温</div>
-        <label class="field">湯温 ℃</label>
-        <input type="number" id="b-temp" placeholder="94">
-        <label class="field">味の印象</label>
-        <textarea id="b-note" placeholder="酸・甘・ボディ・苦味・後味…"></textarea>
-      </div>
-    </div>
+  <h2>3. 精製方法と味の傾向</h2>
+  <p>収穫した果実をどう処理するかで、味は大きく変わる。同じ品種でも別物に感じることがある。</p>
+  <div class="panel">
+    <table>
+      <tr><th>精製</th><th>工程の要点</th><th>味の傾向</th></tr>
+      <tr><td>ウォッシュト（水洗式）</td><td>果肉除去 → 水洗発酵 → 乾燥</td><td>クリーンで酸が明瞭。品種・産地の素性が出やすい。</td></tr>
+      <tr><td>ナチュラル（非水洗）</td><td>果肉ごと天日乾燥</td><td>果実味・甘さ・発酵感が強い。ブルーベリーやワイン様。</td></tr>
+      <tr><td>ハニー / パルプドナチュラル</td><td>果肉除去後、ミューシレージ（粘質）を残して乾燥</td><td>中間。甘さとクリーンさのバランス。White / Yellow / Red / Black で残量が違う</td></tr>
+      <tr><td>アナエロビック（嫌気発酵）</td><td>密閉容器で酸素を断って発酵</td><td>強い個性、独特のフレーバー（シナモン、トロピカル、ワイン）</td></tr>
+      <tr><td>カーボニックマセレーション</td><td>ワイン由来。CO2環境で発酵</td><td>さらに個性的、フルーティ強調</td></tr>
+      <tr><td>スマトラ式（湿式脱穀）</td><td>マンデリン特有。半乾きで脱穀</td><td>アーシー、スパイス、低酸、重いボディ</td></tr>
+    </table>
   </div>
 
-  <!-- TASTE -> HYPOTHESIS -->
-  <div class="card">
-    <h2><span class="n">04</span> 飲んだ評価から仮説を立てる</h2>
-    <p class="hint">どちらが好みだったか、何が違ったかを言語化する。</p>
-    <label class="field">際立った差は？</label>
-    <select id="diff">
-      <option value="">選択…</option>
-      <option value="bright">Aの方が酸が明るかった</option>
-      <option value="flat">Aが平坦・物足りなかった（抽出不足感）</option>
-      <option value="sweet-b">Bの方が甘さ・ボディが出た</option>
-      <option value="bitter-b">Bが苦く重すぎた（過抽出感）</option>
-      <option value="balanced-b">Bの方がバランス良かった</option>
-    </select>
-    <label class="field">好みだったのは？</label>
-    <select id="pref">
-      <option value="">選択…</option>
-      <option value="a">A（低め）</option>
-      <option value="b">B（高め）</option>
-    </select>
-    <div style="margin-top:16px;display:flex;gap:10px;flex-wrap:wrap">
-      <button class="btn" id="genBtn">仮説を表示</button>
-      <button class="btn ghost" id="sendBtn">Claudeに振り返りを送る</button>
-    </div>
-    <div class="hyp" id="hyp"></div>
-    <div class="out" id="out"></div>
+  <h2>4. 焙煎度で抽出方針が変わる</h2>
+  <p>焙煎は豆を化学的に作り替える工程。抽出設計は焙煎度を前提に組み立てる。</p>
+  <div class="panel">
+    <table>
+      <tr><th>焙煎度</th><th>豆の状態</th><th>典型味</th><th>抽出方針</th></tr>
+      <tr><td>ライト〜シナモン（浅煎り）</td><td>豆が硬く密度高い。成分が出にくい</td><td>強い酸、フルーツ、フローラル</td><td>細め・高温(93-96℃)・長め。「抽出を助ける」方向</td></tr>
+      <tr><td>ミディアム（中浅煎り）</td><td>1ハゼ後</td><td>明るい酸＋甘さ</td><td>中細・92℃前後・標準時間</td></tr>
+      <tr><td>シティ（中煎り）</td><td>飲用域の中心</td><td>バランス、ナッツ、チョコ</td><td>中・90-93℃・標準</td></tr>
+      <tr><td>フルシティ（中深煎り）</td><td>2ハゼ直前</td><td>チョコ、コク、控えめな酸</td><td>中〜やや粗・88-91℃</td></tr>
+      <tr><td>フレンチ〜イタリアン（深煎り）</td><td>多孔質、脆い、油分浮く</td><td>苦味、スモーキー、コク</td><td>粗・83-90℃・短め。「出すぎを抑える」方向</td></tr>
+    </table>
+  </div>
+
+  <h2>5. 鮮度と保存</h2>
+  <ul>
+    <li><b>飲み頃</b>：焙煎日からおよそ <code>3日〜2週間</code>。豆により幅あり。直後はガスが多く抽出が乱れる。</li>
+    <li><b>保存</b>：密閉容器、冷暗所。冷凍は議論あり（取り出し時の結露問題）。</li>
+    <li><b>粉</b>：挽いた瞬間から急速劣化。淹れる直前に挽くのが原則。</li>
+  </ul>
+
+  <h2>6. 豆を見て予測する練習</h2>
+  <div class="panel">
+    <p>新しい豆を入手したら、淹れる前に以下を口に出すと「予測」の筋肉が育つ。</p>
+    <ol>
+      <li>産地・品種・精製・焙煎度を確認</li>
+      <li>「この組み合わせなら、たぶん酸は◯◯系、甘さは◯◯、ボディは◯◯」と予測</li>
+      <li>抽出方針の出発点を決める（挽き目・温度・時間）</li>
+      <li>淹れて答え合わせ（Ch.3で記録）</li>
+      <li>外れた点を Claude に「なぜ外れたか」相談</li>
+    </ol>
+  </div>
+
+  <h2>Claudeを豆の専門家にする</h2>
+  <p>新しい豆を買ったとき、このプロンプトと豆の情報を投げると、抽出の出発点と注意点を整理してくれる。</p>
+  <div class="promptbox" id="prompt-bean">あなたは Q Grader 資格を持ち、グリーンコーヒー（生豆）の知識に精通したコーヒー専門家です。SCA Green Coffee 教材と CQI Q-Grader カリキュラム、産地ロースターの公開情報を主な拠り所にし、日本のスペシャルティロースター文脈（堀口珈琲、LIGHT UP COFFEE、ONIBUS COFFEE、PHILOCOFFEA など）にも詳しい立場で答えてください。
+
+私は Brewers Lab Chapter 4「豆を知る」を学習した中級ドリッパーです。今から「ある豆の情報」を渡しますので、以下を行ってください：
+
+1. その豆の典型的な味のキャラクター予測（産地・品種・精製・焙煎度から）
+2. ハンドドリップでの抽出方針の出発点（挽き目・湯温・レシオ・注ぎ方）
+3. その豆で特に注意すべきポイント（過抽出になりやすい/未抽出になりやすい/欠点が出やすい等）
+4. 同じ国・産地でも似たキャラクターを持つ豆との比較
+
+不確かな点は「仮説」と明記し、断定しすぎないでください。
+
+豆の情報：
+（産地・品種・精製・焙煎度・焙煎日・ロースターのテイスティングノートなど、わかる範囲で記入）<button class="copy" onclick="BrewersLab.copyToClipboard(document.getElementById('prompt-bean').firstChild.textContent, this)">コピー</button></div>
+
+  <div class="btnrow">
+    <a class="btn ghost" href="ch3.html">← レシピ開発</a>
+    <a class="btn primary" href="ch5.html">次へ：SCA・抽出理論 →</a>
   </div>
 </div>
-
-<script>
-const $=id=>document.getElementById(id);
-const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
-
-// ---- temperature model (heuristic, 80-100) ----
-function model(t){
-  // normalized 0..1 across 80-100
-  const n=(t-80)/20;
-  return {
-    bright: clamp(95-(n*70),8,98),        // lower temp -> brighter acidity, but very low = thin
-    sweet:  clamp(100-Math.abs(t-91)*9,15,100), // sweetness peaks mid (~90-92)
-    body:   clamp(25+n*70,10,98),          // higher temp -> more body/extraction
-    bitter: clamp((t-88)*14,4,100)         // bitterness climbs sharply above ~88-90
-  };
-}
-function zoneLabel(t){
-  if(t<85) return "低温域 · 抽出が穏やか";
-  if(t<89) return "やや低温 · 明るく軽い";
-  if(t<93) return "中温域 · バランスゾーン";
-  if(t<97) return "やや高温 · 濃く力強い";
-  return "高温域 · 過抽出に注意";
-}
-function heatColor(t){
-  const n=(t-80)/20;
-  // interpolate cool blue -> hot orange/red
-  const r=Math.round(44+(224-44)*n);
-  const g=Math.round(95+(101-95)*n);
-  const b=Math.round(124+(26-124)*n);
-  return `rgb(${r},${g},${b})`;
-}
-function render(t){
-  const m=model(t);
-  $('readout').innerHTML=t+'<span>℃</span>';
-  $('zone').textContent=zoneLabel(t);
-  $('f-bright').style.width=m.bright+'%';
-  $('f-sweet').style.width=m.sweet+'%';
-  $('f-body').style.width=m.body+'%';
-  $('f-bitter').style.width=m.bitter+'%';
-  const lvl=v=>v>70?'高':v>40?'中':'低';
-  $('v-bright').textContent=lvl(m.bright);
-  $('v-sweet').textContent=lvl(m.sweet);
-  $('v-body').textContent=lvl(m.body);
-  $('v-bitter').textContent=lvl(m.bitter);
-  const c=heatColor(t);
-  document.documentElement.style.setProperty('--heat',c);
-  document.querySelectorAll('.deg').forEach(e=>e.style.color=c);
-  document.body.style.background=`hsl(${40-(t-80)*0.8},${28+(t-80)*0.6}%,${91-(t-80)*0.15}%)`;
-}
-$('slider').addEventListener('input',e=>render(+e.target.value));
-render(92);
-
-// ---- roast selector ----
-const roasts=[
-  {k:'light',  name:'浅煎り', sw:'#a87444', lo:92, hi:96, txt:'硬く溶けにくい。高めの湯温で酸の奥の甘さまで引き出す。'},
-  {k:'mlight', name:'中浅',   sw:'#8a5a32', lo:90, hi:94, txt:'明るさと甘さの両立を狙う中〜高温域。'},
-  {k:'medium', name:'中煎り', sw:'#6b4226', lo:88, hi:93, txt:'最も自由度が高い帯。好みで上下に振りやすい。'},
-  {k:'mdark',  name:'中深',   sw:'#4a2c1a', lo:85, hi:90, txt:'溶けやすくなる。やや低めで苦味を抑える。'},
-  {k:'dark',   name:'深煎り', sw:'#2a1810', lo:83, hi:88, txt:'成分が出やすい。低温で過抽出・刺さる苦味を回避。'}
-];
-const rc=$('roasts');
-roasts.forEach((r,i)=>{
-  const b=document.createElement('div');
-  b.className='roast-btn'+(i===2?' active':'');
-  b.innerHTML=`<span class="swatch" style="background:${r.sw}"></span>${r.name}`;
-  b.onclick=()=>{document.querySelectorAll('.roast-btn').forEach(x=>x.classList.remove('active'));b.classList.add('active');showRange(r);};
-  rc.appendChild(b);
-});
-function showRange(r){
-  const L=(r.lo-80)/20*100, W=(r.hi-r.lo)/20*100;
-  $('hi').style.left=L+'%'; $('hi').style.width=W+'%';
-  $('reco').innerHTML=`<b>${r.name}</b> の推奨湯温レンジ: <b>${r.lo}–${r.hi}℃</b><br>${r.txt} <span class="tag">一般傾向</span>`;
-  window._roast=r;
-}
-showRange(roasts[2]);
-
-// ---- hypothesis ----
-function buildHyp(){
-  const diff=$('diff').value, pref=$('pref').value;
-  const a=$('a-temp').value||'A', b=$('b-temp').value||'B';
-  if(!diff&&!pref) return '差と好みを選ぶと、湯温が効いた可能性の仮説を表示します。';
-  let s='<b>この温度差から考えられること（仮説）</b><br>';
-  const map={
-    bright:`A(${a}℃)で酸が明るかった → 低温は酸を先に、苦味・渋みを後から出す。湯温が酸質の知覚を左右した可能性。`,
-    flat:`A(${a}℃)が平坦 → 低すぎて成分が出きらない抽出不足の兆候。次は数℃上げるか時間/挽き目で補う余地。`,
-    'sweet-b':`B(${b}℃)で甘さ・ボディが増した → 高温が中盤以降の糖・コクの溶解を促進した可能性。`,
-    'bitter-b':`B(${b}℃)が苦く重い → 高温による過抽出の兆候。湯温を下げるのが第一手（挽き目より先に湯温を疑う）。`,
-    'balanced-b':`B(${b}℃)が均衡 → この豆ではやや高めが甘さと明るさの交点だった可能性。`
-  };
-  if(diff)s+=map[diff]+'<br>';
-  if(pref)s+=`好みは <b>${pref==='a'?'A(低め)':'B(高め)'}</b>。次は好みの側を中心に±1〜2℃で微調整し、他2変数は固定のまま。`;
-  return s;
-}
-$('genBtn').onclick=()=>{const h=$('hyp');h.innerHTML=buildHyp();h.classList.add('show');};
-
-// ---- send to Claude ----
-$('sendBtn').onclick=()=>{
-  const r=window._roast||{};
-  const txt=
-`【Ch.4 湯温 振り返り】
-固定条件: ${$('fixed').value||'(未記入)'}
-推奨レンジ参照: ${r.name||'-'} (${r.lo||'-'}–${r.hi||'-'}℃)
-A: ${$('a-temp').value||'-'}℃ → ${$('a-note').value||'-'}
-B: ${$('b-temp').value||'-'}℃ → ${$('b-note').value||'-'}
-際立った差: ${$('diff').selectedOptions[0]?.text||'-'}
-好み: ${$('pref').selectedOptions[0]?.text||'-'}
-
-この結果について、湯温と焙煎度の関係でコーチングをお願いします。`;
-  if(typeof sendPrompt==='function'){sendPrompt(txt);}
-  else{const o=$('out');o.textContent=txt;o.classList.add('show');navigator.clipboard&&navigator.clipboard.writeText(txt);}
-};
-</script>
 </body>
 </html>

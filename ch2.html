@@ -3,411 +3,270 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Brewers Lab Ch.2 — 挽き目</title>
-<style>
-  :root{
-    --bg:#1a1714;
-    --panel:#231f1ب;
-    --panel:#241f1a;
-    --panel2:#2c2620;
-    --line:#3a332b;
-    --ink:#efe7da;
-    --muted:#9b8f7d;
-    --acid:#c6e04a;       /* 酸 */
-    --sweet:#e8a24a;      /* 甘 */
-    --bitter:#a36b8f;     /* 苦 */
-    --hot:#d8512f;
-    --grain:#7a6a52;
-  }
-  *{box-sizing:border-box}
-  body{
-    margin:0;background:
-      radial-gradient(900px 500px at 80% -10%, #2b251e 0%, transparent 60%),
-      var(--bg);
-    color:var(--ink);
-    font-family:"Hiragino Kaku Gothic ProN","Yu Gothic",-apple-system,system-ui,sans-serif;
-    line-height:1.5;
-  }
-  .wrap{max-width:1080px;margin:0 auto;padding:28px 20px 80px}
-  header{border-bottom:1px solid var(--line);padding-bottom:18px;margin-bottom:26px}
-  .eyebrow{font-size:11px;letter-spacing:.32em;color:var(--grain);text-transform:uppercase}
-  h1{font-family:"Georgia",serif;font-weight:600;font-size:30px;margin:6px 0 4px;letter-spacing:.01em}
-  .sub{color:var(--muted);font-size:13px}
-  .grid{display:grid;grid-template-columns:300px 1fr;gap:22px}
-  @media(max-width:820px){.grid{grid-template-columns:1fr}}
-  .panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px}
-  .panel h2{font-size:12px;letter-spacing:.18em;color:var(--grain);text-transform:uppercase;margin:0 0 14px;font-weight:700}
-
-  /* dial */
-  .dial-shell{display:flex;gap:18px;align-items:stretch}
-  .dial{position:relative;width:74px;flex:0 0 74px;background:linear-gradient(180deg,#2f2820,#211c16);
-    border:1px solid var(--line);border-radius:40px;padding:10px 0}
-  input[type=range]{
-    -webkit-appearance:none;appearance:none;width:230px;height:54px;background:transparent;
-    transform:rotate(-90deg);transform-origin:center;position:absolute;top:50%;left:50%;
-    margin-left:-115px;margin-top:-27px;cursor:pointer}
-  input[type=range]::-webkit-slider-runnable-track{height:6px;border-radius:6px;
-    background:linear-gradient(90deg,#5b4f3c,#cdbfa3)}
-  input[type=range]::-moz-range-track{height:6px;border-radius:6px;background:#5b4f3c}
-  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:30px;height:30px;border-radius:50%;
-    background:radial-gradient(circle at 35% 30%,#f3ead8,#b39d78);border:2px solid #1a1714;margin-top:-12px;
-    box-shadow:0 2px 8px rgba(0,0,0,.5)}
-  input[type=range]::-moz-range-thumb{width:30px;height:30px;border-radius:50%;
-    background:#e7d9bd;border:2px solid #1a1714}
-  .scale{display:flex;flex-direction:column;justify-content:space-between;font-size:11px;color:var(--muted);
-    padding:4px 0}
-  .scale span.on{color:var(--ink);font-weight:700}
-  .readout{margin-top:6px}
-  .grindname{font-family:"Georgia",serif;font-size:26px;margin:2px 0}
-  .grindsub{font-size:12px;color:var(--muted);min-height:32px}
-
-  /* meters */
-  .meter{margin:12px 0}
-  .meter .lab{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-bottom:4px}
-  .meter .lab b{color:var(--ink);font-variant-numeric:tabular-nums}
-  .bar{height:9px;background:var(--panel2);border-radius:6px;overflow:hidden}
-  .bar i{display:block;height:100%;border-radius:6px;transition:width .25s ease,background .25s}
-
-  /* flow viz */
-  .flow{position:relative;height:60px;border-radius:10px;background:var(--panel2);overflow:hidden;margin-top:8px}
-  .drop{position:absolute;top:-8px;width:3px;border-radius:2px;background:#8fb4d4;opacity:.85}
-  .extract-pill{display:inline-block;background:var(--panel2);border:1px solid var(--line);
-    border-radius:20px;padding:6px 14px;font-size:13px;margin-top:8px}
-  .extract-pill b{font-size:18px;font-family:"Georgia",serif}
-
-  /* steps */
-  .steps{display:flex;gap:6px;margin-bottom:18px;flex-wrap:wrap}
-  .step{flex:1;min-width:120px;border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:var(--panel)}
-  .step.active{border-color:var(--grain);background:var(--panel2)}
-  .step .n{font-size:11px;color:var(--grain);letter-spacing:.1em}
-  .step .t{font-size:13px;margin-top:2px}
-
-  label.fld{display:block;font-size:12px;color:var(--muted);margin:12px 0 5px}
-  input.txt,textarea,select{width:100%;background:var(--panel2);border:1px solid var(--line);
-    border-radius:8px;color:var(--ink);padding:9px 11px;font-family:inherit;font-size:13px}
-  textarea{min-height:58px;resize:vertical}
-  .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-  button{font-family:inherit;cursor:pointer;border-radius:8px;border:1px solid var(--line);
-    background:var(--panel2);color:var(--ink);padding:9px 14px;font-size:13px;transition:.15s}
-  button:hover{border-color:var(--grain)}
-  button.primary{background:var(--hot);border-color:var(--hot);color:#fff;font-weight:600}
-  button.primary:hover{filter:brightness(1.08)}
-  .actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
-
-  table{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:6px}
-  th,td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--line);vertical-align:top}
-  th{color:var(--grain);font-weight:600;letter-spacing:.04em}
-  .tag{display:inline-block;font-size:11px;padding:1px 7px;border-radius:10px;border:1px solid var(--line)}
-  .empty{color:var(--muted);font-size:13px;padding:14px 4px}
-
-  /* compare */
-  .cmp{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-  @media(max-width:560px){.cmp{grid-template-columns:1fr}.row2{grid-template-columns:1fr}}
-  .cmpcard{border:1px solid var(--line);border-radius:10px;padding:12px}
-  .cmpcard h3{margin:0 0 8px;font-size:13px}
-  .legend{font-size:11px;color:var(--muted);display:flex;gap:14px;flex-wrap:wrap;margin-top:8px}
-  .legend i{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px;vertical-align:middle}
-  .hint{font-size:12px;color:var(--muted);margin-top:10px;border-left:2px solid var(--grain);padding-left:10px}
-</style>
+<title>Ch.2 味の言語化 — Brewers Lab</title>
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
+<script src="app.js"></script>
+<script>if(!BrewersLab.Auth.require()){}else BrewersLab.renderNav('ch2');</script>
+
 <div class="wrap">
-  <header>
-    <div class="eyebrow">Brewers Lab · Chapter 02</div>
-    <h1>挽き目 — 主要変数の徹底理解</h1>
-    <div class="sub">ダイヤルを回す → 味の傾向を予測する → 淹れる → 結果を記録する。1段の差を言語化する練習。</div>
+  <header class="page">
+    <p class="eyebrow">Chapter 2</p>
+    <h1>味の言語化トレーニング</h1>
+    <p class="lede">「美味しい」「美味しくない」で止まると、抽出の改善先が見えない。味を5軸＋具体語彙に分解する習慣をつけると、口に入った瞬間に「次に何を直すか」が浮かぶようになる。</p>
   </header>
 
-  <!-- STEPS -->
-  <div class="steps" id="steps">
-    <div class="step active" data-s="0"><div class="n">STEP 1</div><div class="t">仮説を立てる</div></div>
-    <div class="step" data-s="1"><div class="n">STEP 2</div><div class="t">淹れる</div></div>
-    <div class="step" data-s="2"><div class="n">STEP 3</div><div class="t">記録する</div></div>
-    <div class="step" data-s="3"><div class="n">STEP 4</div><div class="t">次の実験へ</div></div>
+  <h2>1. 5軸分解の手順</h2>
+  <p>カップを口に含んだら、頭の中で順番に問いを立てる。最初は時間がかかっていい。慣れると数秒で全部回るようになる。</p>
+  <div class="panel">
+    <table>
+      <tr><th>軸</th><th>問い</th><th>何を見る</th></tr>
+      <tr><td>① 酸質</td><td>明るい？穏やか？ 何の酸？</td><td>レモン様／りんご様／発酵感／フラットか</td></tr>
+      <tr><td>② 甘さ</td><td>砂糖？蜂蜜？果実？</td><td>強さと、口に残る長さ</td></tr>
+      <tr><td>③ 苦味</td><td>心地よいか刺さるか</td><td>ロースト由来 vs 過抽出由来</td></tr>
+      <tr><td>④ ボディ</td><td>水か紅茶かシロップか</td><td>口に残る重さ・質感</td></tr>
+      <tr><td>⑤ 余韻</td><td>消える？伸びる？汚れる？</td><td>飲み込んだ後、何がどれだけ続くか</td></tr>
+    </table>
   </div>
 
-  <div class="grid">
-    <!-- LEFT: DIAL -->
-    <div class="panel">
-      <h2>挽き目ダイヤル</h2>
-      <div class="dial-shell">
-        <div class="dial"><input id="grind" type="range" min="0" max="8" value="4" step="1"></div>
-        <div class="scale" id="scale"></div>
-      </div>
-      <div class="readout">
-        <div class="grindname" id="gname">中細挽き</div>
-        <div class="grindsub" id="gsub"></div>
-        <span class="extract-pill">推定抽出率 <b id="extract">19.5</b>%</span>
-      </div>
+  <h2>2. 記述ビルダー</h2>
+  <p>5軸スライダー＋語彙チップで、いま飲んだ一杯を文章化する。出来た記述はそのまま Ch.3 のドリップログにコピペできる。</p>
 
-      <div class="meter">
-        <div class="lab"><span>フロースピード感</span><b id="flowtxt">標準</b></div>
-        <div class="flow" id="flow"></div>
-      </div>
-
-      <div class="meter">
-        <div class="lab"><span style="color:var(--acid)">酸質</span><b id="acidv">—</b></div>
-        <div class="bar"><i id="acidbar" style="background:var(--acid)"></i></div>
-      </div>
-      <div class="meter">
-        <div class="lab"><span style="color:var(--sweet)">甘さ</span><b id="sweetv">—</b></div>
-        <div class="bar"><i id="sweetbar" style="background:var(--sweet)"></i></div>
-      </div>
-      <div class="meter">
-        <div class="lab"><span style="color:var(--bitter)">苦味</span><b id="bitterv">—</b></div>
-        <div class="bar"><i id="bitterbar" style="background:var(--bitter)"></i></div>
-      </div>
-      <div class="hint" id="dialhint"></div>
+  <div class="panel">
+    <div class="axis">
+      <div class="top"><span>① 酸質</span><b id="v-acid">3</b></div>
+      <input type="range" id="s-acid" min="1" max="5" value="3">
+      <div class="ends"><span>穏やか・平坦</span><span>明るい・複雑</span></div>
+    </div>
+    <div class="axis">
+      <div class="top"><span>② 甘さ</span><b id="v-sweet">3</b></div>
+      <input type="range" id="s-sweet" min="1" max="5" value="3">
+      <div class="ends"><span>乏しい</span><span>豊か・持続</span></div>
+    </div>
+    <div class="axis">
+      <div class="top"><span>③ 苦味</span><b id="v-bitter">2</b></div>
+      <input type="range" id="s-bitter" min="1" max="5" value="2">
+      <div class="ends"><span>ほぼ無い</span><span>強い</span></div>
+    </div>
+    <div class="axis">
+      <div class="top"><span>④ ボディ</span><b id="v-body">3</b></div>
+      <input type="range" id="s-body" min="1" max="5" value="3">
+      <div class="ends"><span>軽い（水様）</span><span>重い（シロップ様）</span></div>
+    </div>
+    <div class="axis">
+      <div class="top"><span>⑤ 余韻</span><b id="v-after">3</b></div>
+      <input type="range" id="s-after" min="1" max="5" value="3">
+      <div class="ends"><span>短い</span><span>長い</span></div>
     </div>
 
-    <!-- RIGHT: WORKFLOW -->
-    <div>
-      <!-- PREDICT VS RESULT -->
-      <div class="panel" style="margin-bottom:18px">
-        <h2>予測 vs 結果</h2>
-        <div class="row2">
-          <div>
-            <label class="fld">豆 / メモ</label>
-            <input class="txt" id="bean" placeholder="例: エチオピア ウォッシュド">
-          </div>
-          <div>
-            <label class="fld">挽き目（上のダイヤルから自動）</label>
-            <input class="txt" id="grindlock" readonly>
-          </div>
-        </div>
-        <label class="fld">① 予測：この挽き目でどんな味になりそう？</label>
-        <textarea id="predict" placeholder="例: 酸が立って、甘さは中くらい、苦味はほぼ無し。フローは速め。"></textarea>
-        <label class="fld">② 結果：実際に淹れてどうだった？</label>
-        <textarea id="result" placeholder="例: 思ったより薄かった。酸はあるが water down。→ 1段細かくしたい。"></textarea>
-        <div class="row2">
-          <div>
-            <label class="fld">総抽出時間</label>
-            <input class="txt" id="time" placeholder="例: 2:45">
-          </div>
-          <div>
-            <label class="fld">自己診断</label>
-            <select id="diag">
-              <option value="">—</option>
-              <option>未抽出寄り</option>
-              <option>ちょうど良い</option>
-              <option>過抽出寄り</option>
-            </select>
-          </div>
-        </div>
-        <div class="actions">
-          <button class="primary" id="save">記録を保存</button>
-          <button id="clear">入力をクリア</button>
-        </div>
-      </div>
+    <label class="fld">感じた具体フレーバー（下のチップから選ぶ）</label>
+    <div id="flavor-area"></div>
 
-      <!-- LOG -->
-      <div class="panel" style="margin-bottom:18px">
-        <h2>実験ログ</h2>
-        <table id="logtbl"><thead><tr>
-          <th>豆</th><th>挽き目</th><th>時間</th><th>診断</th><th>予測→結果</th><th></th>
-        </tr></thead><tbody id="logbody"></tbody></table>
-        <div class="empty" id="logempty">まだ記録がありません。上で1杯目を保存してみましょう。</div>
-      </div>
-
-      <!-- COMPARE -->
-      <div class="panel">
-        <h2>A vs B 2杯比較</h2>
-        <div class="cmp">
-          <div class="cmpcard">
-            <h3>カップ A</h3>
-            <select id="selA"></select>
-          </div>
-          <div class="cmpcard">
-            <h3>カップ B</h3>
-            <select id="selB"></select>
-          </div>
-        </div>
-        <canvas id="radar" width="520" height="300" style="width:100%;margin-top:14px"></canvas>
-        <div class="legend">
-          <span><i style="background:var(--hot)"></i>カップ A</span>
-          <span><i style="background:#5fa8d3"></i>カップ B</span>
-        </div>
-        <div class="actions">
-          <button class="primary" id="send">Claudeに振り返りを送る</button>
-        </div>
-        <div class="hint" id="sendhint" style="display:none"></div>
-      </div>
+    <label class="fld">記述プレビュー</label>
+    <div class="promptbox" style="background:var(--paper);color:var(--ink);font-family:inherit;font-size:13.5px;max-height:none" id="describe-out">スライダーを動かすと、記述文と抽出の手がかりがここに出ます。</div>
+    <div class="btnrow">
+      <button class="accent" onclick="copyDesc()">この記述をコピー</button>
+      <button class="ghost" onclick="resetDesc()">リセット</button>
     </div>
+  </div>
+
+  <h2>3. SCA フレーバーホイール（簡略版）</h2>
+  <p>SCAの公式フレーバーホイールを日常語で簡略化したもの。大分類から具体語へ降りていく。1日1カップ、必ず3つは語彙を選ぶ習慣を。</p>
+  <div id="wheel-list" class="panel"></div>
+
+  <h2>4. 味から抽出を逆算するドリル</h2>
+  <p>味の記述を見て、抽出のどこに原因があるかを当てる練習。実際のカップを思い浮かべながら。</p>
+  <div class="panel" id="drill-panel"></div>
+  <div class="btnrow">
+    <button class="ghost" id="drill-next" style="display:none">次の問題 →</button>
+  </div>
+
+  <h2>5. Claudeをカッピング指導者にする</h2>
+  <p>このプロンプトをコピーしてClaudeに貼り、上で作った記述（コピーボタンで取ったもの）を渡すと、フレーバー語彙の精度・抽出との関連・次の試行を指導してくれる。</p>
+  <div class="promptbox" id="prompt-claude">あなたは SCA Q Grader 資格を持つカッピング指導者です。SCA Sensory Skills Handbook と Coffee Tasters Flavor Wheel を主な拠り所に、初学者の「味の語彙」を育てる役割を担います。
+
+私は Brewers Lab Chapter 2「味の言語化トレーニング」を学習中の中級ドリッパーです。今からあるカップについての「私の記述」を渡します。あなたは次を行ってください：
+
+1. その記述から推定される抽出状態（未抽出/過抽出/バランス/欠点フレーバー）の診断
+2. 私が使った語彙が「具体的に何を指しているか」を、私が共有しやすい食材・飲料に置き換えて再記述
+3. もっと精度を上げるなら次に問うべき自問を3つ提案
+4. その味から逆算して、次のドリップで「1つだけ」動かすとよい変数とその方向
+
+語彙の押しつけはせず、私の感覚を尊重してください。不確かな点は仮説と明記してください。
+
+それでは、私の記述を渡します：
+（ここに記述ビルダーで作った文章を貼り付けてください）<button class="copy" onclick="BrewersLab.copyToClipboard(document.getElementById('prompt-claude').firstChild.textContent, this)">コピー</button></div>
+
+  <div class="btnrow">
+    <a class="btn ghost" href="ch1.html">← ドリップ基礎</a>
+    <a class="btn primary" href="ch3.html">次へ：レシピ開発 →</a>
   </div>
 </div>
 
 <script>
-// ---- grind model (9 steps, coarse→fine) ----
-const NAMES=["極粗","粗挽き","中粗","やや中粗","中細挽き","やや細","細挽き","極細寄り","極細"];
-const SUBS=[
- "コールドブリュー〜フレンチプレス域。接触時間が長い抽出向け。",
- "クレバードリッパーや浸漬寄り。",
- "粗めのドリップ。水が抜けやすい。",
- "ドリップの粗い側。フローは速め。",
- "ペーパードリップの基準ゾーン。バランスの起点。",
- "やや詰まり始める。接触が増える。",
- "エアロプレス〜エスプレッソ手前。流速が落ちる。",
- "かなり詰まる。過抽出リスク上昇。",
- "エスプレッソ域。微粉多く水が抜けにくい。"
-];
-// per-step taste profiles 0-100 [酸, 甘, 苦] + extract% + flow(0 fast..100 slow)
-const P=[
- {a:88,s:30,b:8, e:16.0, f:8 },
- {a:84,s:42,b:12,e:17.2, f:18},
- {a:78,s:55,b:18,e:18.2, f:30},
- {a:70,s:64,b:24,e:18.9, f:42},
- {a:60,s:72,b:32,e:19.6, f:52},
- {a:50,s:74,b:42,e:20.4, f:64},
- {a:40,s:66,b:55,e:21.4, f:75},
- {a:30,s:52,b:70,e:22.6, f:86},
- {a:22,s:40,b:82,e:23.8, f:94}
-];
-const HINTS=[
- "粗いほど水が速く抜け、接触時間が短い→未抽出（酸・塩味・薄さ）に寄りやすい。仮説：時間で補えるか？",
- "粗め。甘さが乗り切る前に抜けることが多い。総抽出時間を延ばす余地は？",
- "ここから甘さが出始める帯。1段の差が分かりやすい比較ポイント。",
- "基準の手前。フローが速いと感じたら1段細かくが定石。",
- "多くのレシピの出発点。ここを基準に上下1段ずつ振ると差が掴める。",
- "甘さのピーク帯。苦味が顔を出し始める境目。",
- "流速低下で接触時間が伸びる。過抽出（渋み・ドライ）に注意。",
- "詰まりやすい。同じ時間でも抽出が進みやすい＝過抽出寄り。",
- "ドリップでは過抽出になりやすい領域。エスプレッソ前提向き。"
-];
+(function(){
+  var BL=BrewersLab;
+  var axes=['acid','sweet','bitter','body','after'];
+  var selected=new Set();
 
-const $=id=>document.getElementById(id);
-const slider=$("grind");
-let log=[]; // in-memory only
+  // wheel data
+  var wheel=[
+    {name:'フローラル',color:'#b06a8a',items:['ジャスミン','バラ','カモミール','ラベンダー','紅茶様','エルダーフラワー']},
+    {name:'フルーティ（果実）',color:'#c0532b',items:['ベリー全般','ストロベリー','ブルーベリー','ラズベリー','チェリー','プラム','ぶどう','りんご','洋梨','桃','メロン']},
+    {name:'シトラス（柑橘）',color:'#c08a3e',items:['レモン','ライム','オレンジ','グレープフルーツ','ゆず']},
+    {name:'トロピカル',color:'#a8762f',items:['マンゴー','パイナップル','パッションフルーツ','ライチ','パパイヤ']},
+    {name:'甘味系',color:'#9a6a28',items:['はちみつ','カラメル','黒糖','メープルシロップ','バニラ','チョコレート','ミルクチョコ']},
+    {name:'ナッツ・ココア',color:'#7a5a3a',items:['アーモンド','ヘーゼルナッツ','ピーナッツ','ココア','ダークチョコ','カカオニブ']},
+    {name:'スパイス・ハーブ',color:'#9a5a3a',items:['シナモン','クローブ','黒胡椒','ナツメグ','カルダモン','ローズマリー']},
+    {name:'発酵・ワイン感',color:'#6b5a8a',items:['ワイン様','ラム酒','日本酒様','イチジク','干しブドウ','発酵感']},
+    {name:'ロースト・焦げ感',color:'#5a3a2a',items:['ロースト香','燻製','タバコ','焦げパン','ビター']},
+    {name:'ネガティブ（欠点）',color:'#8a4a4a',items:['過発酵','土っぽい','紙・段ボール','焦げ臭','過度な渋み','金属的','カビ臭']}
+  ];
 
-function paintScale(v){
-  const labels=["粗","","","","中","","","","極細"];
-  $("scale").innerHTML=labels.map((t,i)=>
-    `<span class="${i==v?'on':''}">${t||'·'}</span>`).join("");
-}
-let dropTimer=null;
-function paintFlow(f){
-  const flow=$("flow"); flow.innerHTML="";
-  const n=Math.round(5+f/12);
-  const dur=(1.6 - f/100*1.1); // faster fall when coarse
-  for(let i=0;i<n;i++){
-    const d=document.createElement("div");
-    d.className="drop";
-    d.style.left=(8+Math.random()*84)+"%";
-    d.style.height=(6+Math.random()*10)+"px";
-    d.style.animation=`fall ${dur}s linear ${Math.random()*dur}s infinite`;
-    flow.appendChild(d);
+  // taste descriptions
+  function descSentence(o,flav){
+    var acidW=['','穏やかでフラットな','控えめな','ほどよく明るい','明るい','非常に明るく複雑な'][o.acid];
+    var sweetW=['','甘さに乏しく','控えめな甘さで','程よい甘さで','豊かな甘さで','蜜のような甘さが持続し'][o.sweet];
+    var bitterW=['','苦味はほぼ無く','わずかな苦味で','程よい苦味で','しっかりした苦味で','強い苦味が前に出て'][o.bitter];
+    var bodyW=['','水のように軽く','軽やかな口当たりで','中程度のボディで','厚みのあるボディで','シロップのように重く'][o.body];
+    var afterW=['','余韻は短く消える','やや短い余韻で','程よく続く余韻で','長い余韻があり','非常に長く伸びる余韻で'][o.after];
+
+    var s='酸質は'+acidW+'、'+sweetW+'、'+bitterW+'。\n口当たりは'+bodyW+'、'+afterW+'。';
+    if(flav&&flav.trim()) s+='\n感じたフレーバー: '+flav.trim()+'。';
+    // hint
+    var hint='';
+    if(o.acid>=4&&o.sweet<=2) hint='\n→ 手がかり: 酸が立ち甘さが乗らない = 未抽出ぎみ。挽き目を細かく/時間を延ばす/湯温を上げる方向。';
+    else if(o.bitter>=4&&o.sweet<=2) hint='\n→ 手がかり: 苦味が勝ち甘さが痩せる = 過抽出ぎみ。挽き目を粗く/時間を縮める/湯温を下げる方向。';
+    else if(o.sweet>=4&&o.bitter<=3) hint='\n→ 手がかり: 甘さが乗りバランス良好。この条件を再現できるかが次の課題。';
+    return s+hint;
   }
-}
-const style=document.createElement("style");
-style.textContent="@keyframes fall{to{transform:translateY(70px);opacity:0}}";
-document.head.appendChild(style);
 
-function flowWord(f){return f<25?"速い（さらっと抜ける）":f<50?"やや速い":f<70?"標準":f<85?"やや遅い":"遅い（詰まり気味）";}
+  function readDesc(){
+    var o={};
+    axes.forEach(function(a){
+      o[a]=+document.getElementById('s-'+a).value;
+      document.getElementById('v-'+a).textContent=document.getElementById('s-'+a).value;
+    });
+    return o;
+  }
+  function updateDesc(){
+    var o=readDesc();
+    var flav=Array.from(selected).join(', ');
+    document.getElementById('describe-out').textContent=descSentence(o,flav);
+  }
+  window.copyDesc=function(){
+    BL.copyToClipboard(document.getElementById('describe-out').textContent);
+    alert('記述をコピーしました。Ch.3 のドリップログのメモ欄にも貼れます。');
+  };
+  window.resetDesc=function(){
+    axes.forEach(function(a){document.getElementById('s-'+a).value=(a==='bitter'?2:3);});
+    selected.clear(); renderWheel(); updateDesc();
+  };
 
-function render(){
-  const v=+slider.value, p=P[v];
-  $("gname").textContent=NAMES[v];
-  $("gsub").textContent=SUBS[v];
-  $("extract").textContent=p.e.toFixed(1);
-  $("acidbar").style.width=p.a+"%"; $("acidv").textContent=p.a;
-  $("sweetbar").style.width=p.s+"%"; $("sweetv").textContent=p.s;
-  $("bitterbar").style.width=p.b+"%"; $("bitterv").textContent=p.b;
-  $("flowtxt").textContent=flowWord(p.f);
-  $("dialhint").textContent=HINTS[v];
-  $("grindlock").value=NAMES[v]+"（段 "+(v+1)+"/9）";
-  paintScale(v); paintFlow(p.f);
-}
-slider.addEventListener("input",render);
-
-// ---- log ----
-function diagTag(d){
-  const c={"未抽出寄り":"var(--acid)","ちょうど良い":"var(--sweet)","過抽出寄り":"var(--bitter)"}[d]||"var(--line)";
-  return d?`<span class="tag" style="border-color:${c};color:${c}">${d}</span>`:"—";
-}
-function refreshLog(){
-  const b=$("logbody");
-  $("logempty").style.display=log.length?"none":"block";
-  b.innerHTML=log.map((r,i)=>`<tr>
-    <td>${r.bean||"—"}</td><td>${r.grindName}</td><td>${r.time||"—"}</td>
-    <td>${diagTag(r.diag)}</td>
-    <td><div style="color:var(--muted)">${r.predict||"—"}</div>
-        <div style="margin-top:3px">↳ ${r.result||"—"}</div></td>
-    <td><button data-del="${i}">削除</button></td></tr>`).join("");
-  b.querySelectorAll("[data-del]").forEach(btn=>btn.onclick=()=>{
-    log.splice(+btn.dataset.del,1);refreshLog();fillSelects();drawRadar();});
-  fillSelects();
-}
-$("save").onclick=()=>{
-  const v=+slider.value,p=P[v];
-  log.push({bean:$("bean").value.trim(),grindIdx:v,grindName:NAMES[v]+"("+(v+1)+")",
-    time:$("time").value.trim(),diag:$("diag").value,
-    predict:$("predict").value.trim(),result:$("result").value.trim(),p:p});
-  refreshLog(); drawRadar();
-  ["predict","result","time"].forEach(id=>$(id).value="");
-  $("diag").value="";
-  setStep(2);
-};
-$("clear").onclick=()=>{["bean","predict","result","time"].forEach(id=>$(id).value="");$("diag").value="";};
-
-// ---- steps highlight ----
-function setStep(n){document.querySelectorAll(".step").forEach(s=>
-  s.classList.toggle("active",+s.dataset.s===n));}
-document.querySelectorAll(".step").forEach(s=>s.onclick=()=>setStep(+s.dataset.s));
-
-// ---- compare selects + radar ----
-function fillSelects(){
-  ["selA","selB"].forEach(id=>{
-    const sel=$(id),cur=sel.value;
-    sel.innerHTML='<option value="">—</option>'+log.map((r,i)=>
-      `<option value="${i}">${r.bean||"杯"} / ${r.grindName}</option>`).join("");
-    sel.value=cur;
+  axes.forEach(function(a){
+    document.getElementById('s-'+a).addEventListener('input',updateDesc);
   });
-}
-["selA","selB"].forEach(id=>{const e=$(id);if(e)e.onchange=drawRadar;});
 
-function drawRadar(){
-  const cv=$("radar"),ctx=cv.getContext("2d");
-  const W=cv.width,H=cv.height,cx=W/2,cy=H/2+6,R=110;
-  ctx.clearRect(0,0,W,H);
-  const axes=["酸質","甘さ","苦味"];
-  // grid
-  ctx.strokeStyle="#3a332b";ctx.fillStyle="#9b8f7d";ctx.font="13px sans-serif";ctx.textAlign="center";
-  for(let ring=1;ring<=4;ring++){
-    ctx.beginPath();
-    for(let i=0;i<=3;i++){const ang=-Math.PI/2+i*2*Math.PI/3;
-      const x=cx+Math.cos(ang)*R*ring/4,y=cy+Math.sin(ang)*R*ring/4;
-      i?ctx.lineTo(x,y):ctx.moveTo(x,y);}
-    ctx.closePath();ctx.stroke();
+  // flavor area summary chips
+  function renderFlavorArea(){
+    var fa=document.getElementById('flavor-area');
+    fa.innerHTML='';
+    if(selected.size===0){
+      fa.innerHTML='<div class="small muted">下のフレーバーホイールから語を選ぶと、ここに反映されます</div>';
+      return;
+    }
+    var chips=BL.el('div',{class:'chips'});
+    Array.from(selected).forEach(function(s){
+      var c=BL.el('span',{class:'chip small on',style:{cursor:'pointer'},onclick:function(){
+        selected.delete(s); renderFlavorArea(); renderWheel(); updateDesc();
+      }},s+' ×');
+      chips.appendChild(c);
+    });
+    fa.appendChild(chips);
   }
-  axes.forEach((t,i)=>{const ang=-Math.PI/2+i*2*Math.PI/3;
-    const x=cx+Math.cos(ang)*(R+24),y=cy+Math.sin(ang)*(R+24)+4;ctx.fillText(t,x,y);});
-  function poly(idx,color){
-    if(idx==="")return;const p=log[+idx].p,vals=[p.a,p.s,p.b];
-    ctx.beginPath();
-    vals.forEach((val,i)=>{const ang=-Math.PI/2+i*2*Math.PI/3;
-      const x=cx+Math.cos(ang)*R*val/100,y=cy+Math.sin(ang)*R*val/100;
-      i?ctx.lineTo(x,y):ctx.moveTo(x,y);});
-    ctx.closePath();
-    ctx.fillStyle=color+"33";ctx.strokeStyle=color;ctx.lineWidth=2;ctx.fill();ctx.stroke();
+
+  // wheel render
+  function renderWheel(){
+    var wl=document.getElementById('wheel-list'); wl.innerHTML='';
+    wheel.forEach(function(cat){
+      var head=BL.el('h3',{style:{color:cat.color,marginTop:'14px',fontSize:'14px'}},cat.name);
+      wl.appendChild(head);
+      var chips=BL.el('div',{class:'chips'});
+      cat.items.forEach(function(it){
+        var c=BL.el('button',{type:'button',class:'chip small'+(selected.has(it)?' on':''),onclick:function(){
+          if(selected.has(it)){selected.delete(it);} else{selected.add(it);}
+          renderWheel(); renderFlavorArea(); updateDesc();
+        }},it);
+        chips.appendChild(c);
+      });
+      wl.appendChild(chips);
+    });
   }
-  poly($("selA").value,"#d8512f");
-  poly($("selB").value,"#5fa8d3");
-}
+  renderWheel(); renderFlavorArea(); updateDesc();
 
-// ---- send to Claude ----
-$("send").onclick=()=>{
-  if(!log.length){$("sendhint").style.display="block";
-    $("sendhint").textContent="まず1杯記録してから送ってください。";return;}
-  const lines=log.map((r,i)=>`${i+1}. ${r.bean||"豆"} / ${r.grindName} / ${r.time||"時間?"} / 診断:${r.diag||"-"}
-   予測: ${r.predict||"-"}
-   結果: ${r.result||"-"}`).join("\n");
-  const a=$("selA").value,b=$("selB").value;
-  const cmp=(a!==""&&b!==""&&a!==b)?`\n比較中: A=${log[+a].grindName} vs B=${log[+b].grindName}`:"";
-  const msg=`【Ch.2 挽き目 振り返り】\n${lines}${cmp}\n\nこのログから、挽き目1段の差をどう言語化できる？次に振るべき1変数は？`;
-  if(typeof sendPrompt==="function"){sendPrompt(msg);}
-  else{$("sendhint").style.display="block";$("sendhint").textContent="（このプレビューでは送信先がありません。チャットUIで動作します。）";}
-};
-
-render(); refreshLog(); drawRadar();
+  // ===== drill =====
+  var drills=[
+    {desc:'明るくシャープな酸が前に出るが、甘さがほとんど感じられず、後味が軽くすぐ消える。',
+     opts:['未抽出ぎみ','過抽出ぎみ','ちょうど良い'],ans:0,
+     why:'酸が突出し甘さ・余韻が乏しいのは未抽出の典型。抽出が手前で止まっている。挽き目を1段細かく／時間を延ばす／湯温を上げる、のうち1つだけを試す。'},
+    {desc:'飲んだ瞬間から重い苦味と乾いた渋みが舌に残り、甘さが痩せている。後味は不快に長い。',
+     opts:['未抽出ぎみ','過抽出ぎみ','ちょうど良い'],ans:1,
+     why:'苦味・渋みが勝ち甘さが減るのは過抽出。挽き目を1段粗く／時間を縮める／湯温を下げる、のうち1つだけ試す。'},
+    {desc:'やわらかな酸の後に甘さが乗り、苦味は穏やか。クリーンな余韻が伸びる。',
+     opts:['未抽出ぎみ','過抽出ぎみ','ちょうど良い'],ans:2,
+     why:'甘さが中心にあり、酸・苦のバランスが取れ、余韻がクリーン = 適正抽出。まずこの条件を「同一条件反復」で再現できるか確かめる。'},
+    {desc:'酸はそこそこ明るいのに、同じ一杯の中に渋い苦味が混ざり、印象がちぐはぐ。',
+     opts:['挽き目が均一でない（微粉と粗粒の混在）','湯温が低すぎる','レシオが薄すぎる'],ans:0,
+     why:'「未抽出の酸」と「過抽出の渋み」が同居するのは粒度分布が広いサイン。微粉が過抽出、粗粒が未抽出を同時に起こす。グラインダー精度や挽き目の見直し。'},
+    {desc:'全体に味がぼんやり薄く、濃さが足りない。ただし酸・苦のバランスは崩れていない。',
+     opts:['過抽出','濃度（レシオ）の問題','湯温が高すぎる'],ans:1,
+     why:'バランスは取れているのに「薄い」だけなら、抽出率ではなく濃度の問題。粉量を増やすか湯量を減らす（レシオを濃く）。Ch.5 の「濃度≠抽出率」が効く。'},
+    {desc:'香りは華やかだが口に含むと平坦で、甘さも酸も弱く、ぼんやりしている。',
+     opts:['未抽出ぎみ','過抽出ぎみ','ちょうど良い'],ans:0,
+     why:'香りは立つのに味が出ていない = 抽出不足で可溶成分が十分出ていない。挽き目・時間・湯温で抽出を後押し。'},
+    {desc:'最初の一口で「紙のような」「段ボールのような」乾いた風味を感じる。',
+     opts:['過抽出','フィルターのすすぎ不足','水質の問題'],ans:1,
+     why:'紙臭はみさらしフィルターの未洗浄が典型的原因。漂白でも保管環境次第で出る。ドリップ前にお湯でしっかりすすぐ習慣を。'},
+    {desc:'明らかに渋く、抽出時間も平均より長くかかった。',
+     opts:['挽き目が細かすぎる','湯温が低すぎる','豆が古い'],ans:0,
+     why:'抽出時間が伸びて渋い = 流路が詰まり過抽出が進行している。挽き目を1段粗くするのが第一手。'}
+  ];
+  var di=0,score=0;
+  function renderDrill(){
+    var d=drills[di];
+    var p=document.getElementById('drill-panel'); p.innerHTML='';
+    p.dataset.answered='';
+    var prog=BL.el('div',{class:'small muted',style:{marginBottom:'10px'}},'問題 '+(di+1)+' / '+drills.length+'　正解 '+score);
+    p.appendChild(prog);
+    var sc=BL.el('div',{class:'note',style:{borderLeftColor:'var(--accent)',marginTop:0}});
+    sc.innerHTML='<div class="lab" style="margin-bottom:6px">この味の記述から、抽出の状態を推定すると？</div>'+d.desc;
+    p.appendChild(sc);
+    var opts=BL.el('div',{style:{display:'flex',flexDirection:'column',gap:'8px',marginTop:'12px'}});
+    var ex=BL.el('div',{class:'small muted',style:{marginTop:'12px',display:'none',lineHeight:'1.7'}},d.why);
+    d.opts.forEach(function(o,i){
+      var b=BL.el('button',{type:'button',class:'ghost',style:{textAlign:'left',padding:'12px 14px'},onclick:function(){
+        if(p.dataset.answered) return; p.dataset.answered='1';
+        opts.children[d.ans].style.background='#e8eede'; opts.children[d.ans].style.borderColor='var(--good)';
+        if(i===d.ans){score++; } else { b.style.background='#f0e2ea'; b.style.borderColor='var(--bitter)'; }
+        prog.textContent='問題 '+(di+1)+' / '+drills.length+'　正解 '+score;
+        ex.style.display='block';
+        document.getElementById('drill-next').style.display=(di<drills.length-1)?'inline-block':'none';
+        if(di>=drills.length-1){
+          var done=BL.el('div',{class:'note',style:{marginTop:'14px'}});
+          done.innerHTML='<b>全'+drills.length+'問終了。正解 '+score+'/'+drills.length+'。</b> 味から抽出を逆算する筋肉は、実カップでの反復で育ちます。';
+          p.appendChild(done);
+        }
+      }},o);
+      opts.appendChild(b);
+    });
+    p.appendChild(opts); p.appendChild(ex);
+  }
+  document.getElementById('drill-next').onclick=function(){
+    if(di<drills.length-1){ di++; renderDrill(); }
+  };
+  renderDrill();
+})();
 </script>
 </body>
 </html>

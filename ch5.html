@@ -3,391 +3,200 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Brewers Lab Ch.5 — 変数の相互作用</title>
-<style>
-  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,900&family=Zen+Kaku+Gothic+New:wght@400;500;700&family=Space+Mono:wght@400;700&display=swap');
-
-  :root{
-    --ink:#1a1410;
-    --paper:#efe7d8;
-    --paper-2:#e4d8c2;
-    --line:#c4b39a;
-    --acid:#d4471f;      /* 酸 */
-    --sweet:#e0a02e;     /* 甘 */
-    --bitter:#5a3a22;    /* 苦 */
-    --body:#6b7d52;      /* ボディ */
-    --ink-soft:#5c5145;
-    --green:#3c4a2a;
-  }
-  *{box-sizing:border-box;margin:0;padding:0}
-  body{
-    background:
-      radial-gradient(circle at 20% 0%, #f4eee1 0%, transparent 45%),
-      var(--paper);
-    color:var(--ink);
-    font-family:'Zen Kaku Gothic New',sans-serif;
-    line-height:1.6;
-    padding:clamp(16px,3vw,40px);
-    -webkit-font-smoothing:antialiased;
-  }
-  .wrap{max-width:1100px;margin:0 auto}
-
-  header.masthead{
-    border-bottom:3px solid var(--ink);
-    padding-bottom:14px;margin-bottom:8px;
-    display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;
-  }
-  .ch-tag{
-    font-family:'Space Mono',monospace;font-size:.72rem;letter-spacing:.18em;
-    text-transform:uppercase;color:var(--acid);font-weight:700;
-  }
-  h1{
-    font-family:'Fraunces',serif;font-weight:900;font-size:clamp(1.9rem,5vw,3.1rem);
-    line-height:.98;letter-spacing:-.01em;
-  }
-  h1 em{font-style:italic;color:var(--acid)}
-  .sub{font-size:.82rem;color:var(--ink-soft);max-width:34ch;text-align:right}
-
-  .grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:22px}
-  @media(max-width:820px){.grid{grid-template-columns:1fr}}
-
-  .panel{
-    background:var(--paper-2);
-    border:1.5px solid var(--line);
-    padding:18px 20px;
-  }
-  .panel h2{
-    font-family:'Space Mono',monospace;font-size:.74rem;letter-spacing:.16em;
-    text-transform:uppercase;color:var(--ink-soft);font-weight:700;
-    border-bottom:1px solid var(--line);padding-bottom:8px;margin-bottom:14px;
-    display:flex;align-items:center;gap:8px;
-  }
-  .panel h2 .num{
-    background:var(--ink);color:var(--paper);font-size:.7rem;
-    width:18px;height:18px;display:grid;place-items:center;flex:none;
-  }
-
-  /* sliders */
-  .ctrl{margin-bottom:18px}
-  .ctrl-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px}
-  .ctrl label{font-weight:700;font-size:.92rem}
-  .ctrl .val{font-family:'Space Mono',monospace;font-weight:700;font-size:.95rem;color:var(--acid)}
-  .ctrl .hint{font-size:.72rem;color:var(--ink-soft);margin-top:2px}
-  input[type=range]{
-    -webkit-appearance:none;width:100%;height:3px;background:var(--ink);
-    margin-top:8px;cursor:pointer;
-  }
-  input[type=range]::-webkit-slider-thumb{
-    -webkit-appearance:none;width:20px;height:20px;border-radius:50%;
-    background:var(--paper);border:3px solid var(--acid);cursor:grab;
-  }
-  input[type=range]::-moz-range-thumb{
-    width:20px;height:20px;border-radius:50%;background:var(--paper);
-    border:3px solid var(--acid);cursor:grab;
-  }
-
-  /* radar */
-  .radar-wrap{display:flex;flex-direction:column;align-items:center}
-  svg.radar{width:100%;max-width:340px;height:auto}
-  .legend{display:flex;gap:14px;flex-wrap:wrap;justify-content:center;margin-top:8px;font-size:.74rem}
-  .legend span{display:flex;align-items:center;gap:5px}
-  .dot{width:10px;height:10px;border-radius:2px;display:inline-block}
-
-  .ratio-read{
-    font-family:'Space Mono',monospace;font-size:.8rem;text-align:center;
-    color:var(--ink-soft);margin-top:6px;
-  }
-
-  /* predict-verify */
-  .pv-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-  @media(max-width:520px){.pv-row{grid-template-columns:1fr}}
-  .pv-box label{display:block;font-size:.74rem;font-weight:700;letter-spacing:.05em;margin-bottom:5px;text-transform:uppercase;color:var(--ink-soft)}
-  textarea,input[type=text]{
-    width:100%;background:var(--paper);border:1.5px solid var(--line);
-    padding:9px 10px;font-family:inherit;font-size:.88rem;color:var(--ink);resize:vertical;
-  }
-  textarea:focus,input:focus{outline:2px solid var(--acid);outline-offset:-1px;border-color:var(--acid)}
-  textarea{min-height:70px}
-
-  .btn{
-    font-family:'Space Mono',monospace;font-weight:700;font-size:.78rem;letter-spacing:.08em;
-    background:var(--ink);color:var(--paper);border:none;padding:11px 18px;cursor:pointer;
-    text-transform:uppercase;transition:transform .08s,background .2s;
-  }
-  .btn:hover{background:var(--acid)}
-  .btn:active{transform:translateY(1px)}
-  .btn.ghost{background:transparent;color:var(--ink);border:1.5px solid var(--ink)}
-  .btn.ghost:hover{background:var(--ink);color:var(--paper)}
-  .btn-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
-
-  /* comparison */
-  .cmp{display:grid;grid-template-columns:1fr 1fr;gap:0;border:1.5px solid var(--line)}
-  .cmp .col{padding:12px 14px}
-  .cmp .col:first-child{border-right:1.5px solid var(--line)}
-  .cmp .col h3{font-family:'Space Mono',monospace;font-size:.68rem;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:8px}
-  .cmp .recipe{font-family:'Space Mono',monospace;font-size:.84rem;line-height:1.7}
-  .cmp .recipe b{color:var(--acid)}
-  .cmp .note{font-size:.78rem;margin-top:8px;color:var(--ink-soft)}
-  .empty{font-size:.78rem;color:var(--ink-soft);font-style:italic}
-
-  .span2{grid-column:1/-1}
-
-  footer{margin-top:26px;border-top:1px solid var(--line);padding-top:12px;
-    font-family:'Space Mono',monospace;font-size:.68rem;color:var(--ink-soft);
-    display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}
-
-  #toast{
-    position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(80px);
-    background:var(--green);color:var(--paper);padding:12px 22px;font-size:.84rem;
-    font-weight:700;transition:transform .35s cubic-bezier(.2,.9,.3,1.3);z-index:50;
-    max-width:90vw;
-  }
-  #toast.show{transform:translateX(-50%) translateY(0)}
-</style>
+<title>Ch.5 SCA・抽出理論 — Brewers Lab</title>
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
+<script src="app.js"></script>
+<script>if(!BrewersLab.Auth.require()){}else BrewersLab.renderNav('ch5');</script>
+
 <div class="wrap">
-  <header class="masthead">
-    <div>
-      <div class="ch-tag">Brewers Lab — Chapter 05</div>
-      <h1>変数の<em>相互作用</em>と<br>抽出設計</h1>
-    </div>
-    <p class="sub">挽き目・時間・湯温は単独では効かない。3つの<strong>掛け算</strong>が一杯を決める。予測して、淹れて、差分から学ぶ。</p>
+  <header class="page">
+    <p class="eyebrow">Chapter 5</p>
+    <h1>SCA・抽出理論</h1>
+    <p class="lede">業界の共通言語＝SCA（Specialty Coffee Association）の基準を、自分のドリップ実践と結びつける。数値は「正解」ではなく、議論の起点として使う。</p>
   </header>
 
-  <div class="grid">
-
-    <!-- CONTROL -->
-    <section class="panel">
-      <h2><span class="num">1</span>コントロールパネル</h2>
-
-      <div class="ctrl">
-        <div class="ctrl-top"><label for="grind">挽き目</label><span class="val" id="grindV">中細</span></div>
-        <input type="range" id="grind" min="0" max="100" value="50">
-        <div class="hint">細い ←　接触面積・抽出効率　→ 粗い</div>
-      </div>
-
-      <div class="ctrl">
-        <div class="ctrl-top"><label for="time">総抽出時間</label><span class="val" id="timeV">2:30</span></div>
-        <input type="range" id="time" min="90" max="270" value="150" step="5">
-        <div class="hint">短い ←　成分の溶け出し総量　→ 長い</div>
-      </div>
-
-      <div class="ctrl">
-        <div class="ctrl-top"><label for="temp">湯温</label><span class="val" id="tempV">92°C</span></div>
-        <input type="range" id="temp" min="82" max="96" value="92">
-        <div class="hint">低い ←　溶解の速さ・苦味の出やすさ　→ 高い</div>
-      </div>
-
-      <div class="ratio-read">※ レシオは Polaris スケールで管理 — ここでは固定前提</div>
-
-      <div class="btn-row">
-        <button class="btn ghost" id="saveCurrent">この設定を「今回」に記録</button>
-      </div>
-    </section>
-
-    <!-- RADAR -->
-    <section class="panel">
-      <h2><span class="num">2</span>推定フレーバープロファイル</h2>
-      <div class="radar-wrap">
-        <svg class="radar" viewBox="0 0 320 300" id="radar" aria-label="フレーバーレーダー"></svg>
-        <div class="legend">
-          <span><i class="dot" style="background:var(--acid)"></i>酸質</span>
-          <span><i class="dot" style="background:var(--sweet)"></i>甘さ</span>
-          <span><i class="dot" style="background:var(--bitter)"></i>苦味</span>
-          <span><i class="dot" style="background:var(--body)"></i>ボディ</span>
-        </div>
-      </div>
-    </section>
-
-    <!-- PREDICT / VERIFY -->
-    <section class="panel span2">
-      <h2><span class="num">3</span>予測 → 検証フロー</h2>
-      <div class="pv-row">
-        <div class="pv-box">
-          <label>① 淹れる前の予測（味の方向）</label>
-          <textarea id="predict" placeholder="例：細くして時間を伸ばしたから、甘さは出るが苦味も上がるはず。酸はやや落ちる…"></textarea>
-        </div>
-        <div class="pv-box">
-          <label>② 実際の評価（淹れた後）</label>
-          <textarea id="actual" placeholder="例：思ったより苦味が立たず、甘さが前に出た。湯温が効いていた？"></textarea>
-        </div>
-      </div>
-      <div class="pv-box" style="margin-top:12px">
-        <label>③ 差分メモ — 予測と現実のズレはどこに？</label>
-        <textarea id="diff" placeholder="ズレた変数・想定外の相互作用を一言で。次の仮説の種になる。"></textarea>
-      </div>
-    </section>
-
-    <!-- HYPOTHESIS -->
-    <section class="panel span2">
-      <h2><span class="num">4</span>仮説メモ「この組み合わせで何が起きる？」</h2>
-      <textarea id="hypo" placeholder="今いじっている3変数の相互作用について、立てている仮説を書く。例：高温×粗挽きは、苦味を抑えつつ抽出効率を補えるのでは？"></textarea>
-    </section>
-
-    <!-- COMPARISON -->
-    <section class="panel span2">
-      <h2><span class="num">5</span>試行比較 — 今回 vs 前回</h2>
-      <div class="cmp">
-        <div class="col">
-          <h3>前回</h3>
-          <div id="prevCol"><p class="empty">まだ記録なし。「今回」を記録すると、次回ここに送られます。</p></div>
-        </div>
-        <div class="col">
-          <h3>今回（ライブ）</h3>
-          <div class="recipe" id="curCol"></div>
-        </div>
-      </div>
-      <div class="btn-row">
-        <button class="btn ghost" id="pushPrev">「今回」を「前回」へ送る</button>
-      </div>
-    </section>
-
+  <h2>1. 抽出の本質 — 何が起きているか</h2>
+  <p>コーヒー抽出は、湯が挽いた粉から可溶性成分（酸、糖、メラノイジン、脂質、カフェイン等）を溶かし出すプロセス。焙煎豆のうち水に溶け得る成分は重量比で <code>約28〜30%</code> 程度とされ、その全部を取り出すわけではない。「どれだけ溶け出させるか」を最適化するのが抽出設計の本丸。</p>
+  <div class="panel key">
+    <h3>溶解の順序（単純化モデル）</h3>
+    <p>成分は一斉に出るわけではなく、おおまかな順序がある：</p>
+    <ol>
+      <li>序盤：酸味・果実香の成分（有機酸、揮発香気）</li>
+      <li>中盤：甘さ・バランスの成分（糖、メラノイジン）</li>
+      <li>後盤：苦味・渋み・収れん（高分子化合物、過剰な抽出物）</li>
+    </ol>
+    <p>「いつ止めるか」で味が決まるのはこのため。</p>
+    <div class="caveat">これは理解を助ける単純化モデル。実際は拡散・溶解・流路の不均一が同時進行し、粒度分布で一粒ごとに進行が違う。厳密な描像は Jonathan Gagné の『The Physics of Filter Coffee』参照。</div>
   </div>
 
-  <div class="btn-row" style="margin-top:20px;justify-content:center">
-    <button class="btn" id="sendClaude">Claudeに振り返りを送る ↗</button>
+  <h2>2. TDS と EY — 業界の共通言語</h2>
+  <p>味の議論を「主観」で終わらせないために、SCA が定義した2つの数値。</p>
+  <div class="panel">
+    <table>
+      <tr><th>指標</th><th>意味</th><th>主に何で動くか</th></tr>
+      <tr><td><b>TDS（Total Dissolved Solids）</b></td><td>液体に溶けている固形分の重量割合。「濃さ」の正体。</td><td>レシオ（粉と湯の比）</td></tr>
+      <tr><td><b>EY（Extraction Yield）</b></td><td>粉のうち何%が液体に移ったか。「抽出が足りる/足りない」の正体。</td><td>挽き目・時間・湯温・水質</td></tr>
+    </table>
+    <p>近似式：<code>EY (%) ≈ TDS (%) × 抽出量(g) ÷ 粉量(g)</code></p>
+    <p>例：粉15g、湯240g、できた液220g、TDS 1.35% → <code>EY ≈ 1.35 × 220 ÷ 15 ≈ 19.8%</code></p>
   </div>
 
-  <footer>
-    <span>HARIO Polaris / Notion log 連携前提</span>
-    <span>Ch.5 — interaction &amp; recipe design</span>
-  </footer>
+  <h2>3. SCA Golden Cup Standard</h2>
+  <p>長年の嗜好調査から導かれた「多くの人が好ましいと感じる」目安レンジ。</p>
+  <div class="panel">
+    <table>
+      <tr><th>指標</th><th>推奨レンジ</th><th>外れたら？</th></tr>
+      <tr><td>TDS</td><td class="num">1.15 – 1.45%</td><td>低い: 薄い／高い: 濃すぎる</td></tr>
+      <tr><td>EY</td><td class="num">18 – 22%</td><td>低い: 未抽出（酸偏重）／高い: 過抽出（苦渋）</td></tr>
+      <tr><td>レシオ</td><td class="num">約 1:16〜1:18</td><td>左右に振って TDS を狙う</td></tr>
+    </table>
+    <div class="caveat"><b>これは「正解」ではない。</b> ゴールデンカップは統計的な嗜好の中心。浅煎りや特定の豆は EY 22% を超えて美味しいことも多く、近年は「より高い抽出率」を志向する潮流もある。基準は出発点で、最後は自分の舌で決める。</div>
+  </div>
+
+  <div class="panel">
+    <h3>TDS の測り方</h3>
+    <p>必須ではないが、持っていると議論が早い。屈折計（リフラクトメーター）で測れる。</p>
+    <ul>
+      <li>VST Coffee Refractometer（業界標準・高精度・高価）</li>
+      <li>DiFluid R2 / Atago など（中価格帯、最近精度向上）</li>
+    </ul>
+    <p>「TDS を測る」と「美味しい」は別の話だが、議論の解像度が一段上がる。自分の「これが美味い」が常に TDS 何%で来ているか把握できると、再現性が一気に上がる。</p>
+  </div>
+
+  <h2>4. SCA 水質基準</h2>
+  <p>抽出液は98%以上が水。水の中のミネラル（特にマグネシウムとカルシウム）が、コーヒー成分を「掴んで引き出す」役割を果たす。</p>
+  <div class="panel">
+    <table>
+      <tr><th>項目</th><th>SCA 目標値</th><th>意味</th></tr>
+      <tr><td>総硬度</td><td class="num">50–175 mg/L (as CaCO₃) / 目標 約100</td><td>抽出力。低すぎ＝弱い、高すぎ＝過抽出＆スケール</td></tr>
+      <tr><td>総アルカリ度</td><td class="num">約 40 mg/L (as CaCO₃)</td><td>酸を中和する緩衝力。高い＝酸が丸まる</td></tr>
+      <tr><td>pH</td><td class="num">6.5 – 7.5（目標 7）</td><td>中性</td></tr>
+      <tr><td>TDS（水）</td><td class="num">75 – 250 mg/L（目標 150）</td><td>総溶解固形分</td></tr>
+      <tr><td>塩素</td><td>0</td><td>あると風味を破壊。浄水で除去</td></tr>
+      <tr><td>臭気</td><td>無臭</td><td>当然</td></tr>
+    </table>
+    <p>日本の水道水は地域差が大きいが多くは軟水で、SCA基準でいうと「やや硬度不足」のことが多い。ボルヴィックは中硬で扱いやすく、コントレックスは硬すぎる（過抽出に振れる）。</p>
+  </div>
+
+  <h2>5. SCA Cupping Form の構造</h2>
+  <p>カッピングは抽出器具による差を消して「豆そのものの素質」を評価する手法。SCAのカッピングフォームは以下の10項目（各 1〜10点）で評価する。</p>
+  <div class="panel">
+    <table>
+      <tr><th>項目</th><th>何を見るか</th></tr>
+      <tr><td>Fragrance/Aroma</td><td>挽いた粉の香り＋湯を注いだあとの湿った香り</td></tr>
+      <tr><td>Flavor</td><td>味の総合的な印象</td></tr>
+      <tr><td>Aftertaste</td><td>飲み込んだ後の余韻</td></tr>
+      <tr><td>Acidity</td><td>酸の強さと質</td></tr>
+      <tr><td>Body</td><td>口当たり・重さ</td></tr>
+      <tr><td>Balance</td><td>各要素の調和</td></tr>
+      <tr><td>Uniformity</td><td>同じサンプル間のばらつき</td></tr>
+      <tr><td>Clean Cup</td><td>異臭・異味の有無</td></tr>
+      <tr><td>Sweetness</td><td>甘さ</td></tr>
+      <tr><td>Overall</td><td>全体的な印象</td></tr>
+    </table>
+    <p>合計が <b>80点以上</b> でスペシャルティ・コーヒーと定義される。Ch.2 の5軸はこのカッピングフォームを日常用に簡略化したものに近い。</p>
+    <p class="small muted">※ 2024年から SCA Coffee Value Assessment (CVA) という新しい評価体系も導入され、従来フォームと並行運用されています。詳しくは SCA 公式。</p>
+  </div>
+
+  <h2>6. 抽出をコントロールする変数（理論まとめ）</h2>
+  <div class="panel">
+    <table>
+      <tr><th>変数</th><th>EY への影響</th><th>TDS への影響</th><th>主な味への影響</th></tr>
+      <tr><td>挽き目</td><td>細かい→大幅↑</td><td>細かい→やや↑</td><td>細かい→苦渋・甘さ深く／粗→酸明るく軽い</td></tr>
+      <tr><td>湯温</td><td>高い→↑</td><td>ほぼ変化なし</td><td>高い→酸＋甘さ／低い→穏やか</td></tr>
+      <tr><td>総抽出時間</td><td>長い→↑</td><td>長い→やや↑</td><td>長い→深い／短い→軽い</td></tr>
+      <tr><td>レシオ（湯/粉）</td><td>ほぼ変化なし</td><td>大幅変化</td><td>変えるのは「濃さ」のみ</td></tr>
+      <tr><td>撹拌（注ぎの強さ）</td><td>強い→↑</td><td>強い→やや↑</td><td>強い→抽出進む／弱い→クリーン</td></tr>
+      <tr><td>水の硬度</td><td>硬い→↑</td><td>変化なし</td><td>硬い→ボディ＋／軟らかい→繊細</td></tr>
+    </table>
+  </div>
+
+  <h2>7. ここまで学んだ後の世界</h2>
+  <p>SCA 基準は「業界の共通言語」だが、近年は別の動きもある：</p>
+  <ul>
+    <li><b>Strong & High Extraction の潮流</b>：従来 EY 18-22% に対し、22%超を狙う淹れ方（Lance Hedrick等）</li>
+    <li><b>SCA Coffee Value Assessment (2024-)</b>：従来のカッピングを「Descriptive」と「Affective」に分け、より精緻に評価</li>
+    <li><b>気候変動と品種改良</b>：耐病性品種 vs 風味重視品種の議論</li>
+    <li><b>Q Arabica / Q Robusta 統合の動き</b>：ロブスタの価値再評価</li>
+  </ul>
+  <p>基準を学んだ後は、それを疑う議論にも触れるとさらに楽しい。</p>
+
+  <h2>Claudeを SCA 理論の指導者にする</h2>
+  <p>このプロンプトを使うと、自分のドリップ実践を SCA 基準と照らし合わせながら議論できる。</p>
+  <div class="promptbox" id="prompt-sca">あなたは SCA Authorized Trainer であり、抽出科学に精通したコーヒー教育者です。SCA Brewing Handbook、SCA Sensory Skills、SCA Water Standards、SCA Coffee Value Assessment、CQI Q Grader カリキュラム、および Scott Rao、Jonathan Gagné、James Hoffmann、Lance Hedrick の研究・著作を主な拠り所にして、業界基準と最新の議論の両方を踏まえて答えてください。
+
+私は Brewers Lab Chapter 5「SCA・抽出理論」を学習した中級ドリッパーです。これから私が以下のうちどれかを質問します：
+
+A) 自分の抽出記録を SCA 基準（Golden Cup、Brewing Control Chart）に照らして評価してほしい
+B) 特定の抽出理論（TDS、EY、Strong & High Extraction、水質設計等）について深掘りしたい
+C) SCA Cupping Form / CVA を使った官能評価を学びたい
+D) SCA の基準と、それを疑う近年の潮流の対立点を教えてほしい
+
+回答する際は：
+- 一次資料に基づく内容と、議論があるトピックを明確に分ける
+- 数値は「目安」「基準」「論者の主張」を区別する
+- 「正解」ではなく「思考の枠組み」を提供する
+
+私の質問：
+（ここに質問を書いてください）<button class="copy" onclick="BrewersLab.copyToClipboard(document.getElementById('prompt-sca').firstChild.textContent, this)">コピー</button></div>
+
+  <h2>参考文献（一次資料・優先順）</h2>
+  <div class="cards">
+    <div class="card" style="cursor:default">
+      <div class="ch">Tier 1 · 業界標準</div>
+      <p class="ti">SCA Brewing Handbook / Water Standards</p>
+      <p class="ds">抽出・水質の基準と理論の土台。</p>
+      <p><a href="https://sca.coffee" target="_blank">sca.coffee →</a></p>
+    </div>
+    <div class="card" style="cursor:default">
+      <div class="ch">Tier 1 · 競技</div>
+      <p class="ti">World Coffee Championships Rules</p>
+      <p class="ds">Brewers Cup の公式ルールと審査基準。</p>
+      <p><a href="https://worldcoffeechampionships.org" target="_blank">wcc.org →</a></p>
+    </div>
+    <div class="card" style="cursor:default">
+      <div class="ch">Tier 2 · 専門家</div>
+      <p class="ti">The Physics of Filter Coffee</p>
+      <p class="ds">Jonathan Gagné。抽出の物理を厳密に。</p>
+      <p><a href="https://coffeeadastra.com" target="_blank">coffeeadastra.com →</a></p>
+    </div>
+    <div class="card" style="cursor:default">
+      <div class="ch">Tier 2 · 専門家</div>
+      <p class="ti">Everything but Espresso</p>
+      <p class="ds">Scott Rao。抽出の実務バイブル。</p>
+      <p><a href="https://www.scottrao.com" target="_blank">scottrao.com →</a></p>
+    </div>
+    <div class="card" style="cursor:default">
+      <div class="ch">Tier 2 · 水質</div>
+      <p class="ti">Water for Coffee</p>
+      <p class="ds">Hendon & Colonna-Dashwood。水質化学の決定版。</p>
+    </div>
+    <div class="card" style="cursor:default">
+      <div class="ch">Tier 3 · 実践</div>
+      <p class="ti">4:6 Method</p>
+      <p class="ds">粕谷哲。WBrC 2016 王者の注湯設計。</p>
+      <p><a href="https://philocoffea.com" target="_blank">philocoffea.com →</a></p>
+    </div>
+    <div class="card" style="cursor:default">
+      <div class="ch">Tier 2 · 入門</div>
+      <p class="ti">YouTube</p>
+      <p class="ds">James Hoffmann。視覚的な抽出解説。</p>
+      <p><a href="https://www.youtube.com/@jameshoffmann" target="_blank">@jameshoffmann →</a></p>
+    </div>
+    <div class="card" style="cursor:default">
+      <div class="ch">Tier 3 · 国内</div>
+      <p class="ti">川野優馬 / LIGHT UP COFFEE</p>
+      <p class="ds">日本語の実践的抽出・焙煎解説。</p>
+      <p><a href="https://note.com/yuma_lightup" target="_blank">note →</a></p>
+    </div>
+  </div>
+
+  <div class="btnrow">
+    <a class="btn ghost" href="ch4.html">← 豆を知る</a>
+    <a class="btn primary" href="ch3.html">レシピ開発に戻る</a>
+  </div>
 </div>
-
-<div id="toast"></div>
-
-<script>
-const $=id=>document.getElementById(id);
-const grind=$('grind'),time=$('time'),temp=$('temp');
-
-// --- labels ---
-function grindLabel(v){
-  if(v<18)return'極細';if(v<38)return'細';if(v<58)return'中細';
-  if(v<78)return'中粗';return'粗';
-}
-function fmtTime(s){const m=Math.floor(s/60),ss=s%60;return m+':'+String(ss).padStart(2,'0');}
-
-// --- flavor model (heuristic, for learning not gospel) ---
-// returns {acid,sweet,bitter,body} 0..100
-function profile(){
-  const g=+grind.value;          // 0 fine .. 100 coarse
-  const t=(+time.value-90)/180;  // 0..1 short..long
-  const tp=(+temp.value-82)/14;  // 0..1 low..high
-  const fine=1-g/100;            // fineness 0..1
-
-  // extraction yield proxy: fine grind + long time + high temp all raise it
-  const ext = .45*fine + .32*t + .23*tp;  // 0..1
-
-  // acidity: high when under-extracted (short time / coarse / cooler) — bright but fades with extraction
-  let acid = 100*(0.85 - 0.7*ext + 0.15*(1-tp));
-  // sweetness: peaks mid-extraction (inverted-U around ext~0.55)
-  let sweet = 100*(1 - Math.pow((ext-0.55)/0.5,2));
-  // bitter: climbs with over-extraction, amplified by high temp + fine grind
-  let bitter = 100*(0.15 + 0.75*Math.pow(ext,1.6) + 0.15*tp*fine);
-  // body: rises with fineness and time (more solubles/oils suspended)
-  let body = 100*(0.25 + 0.45*fine + 0.35*t);
-
-  const clamp=x=>Math.max(4,Math.min(100,x));
-  return {acid:clamp(acid),sweet:clamp(sweet),bitter:clamp(bitter),body:clamp(body)};
-}
-
-// --- radar draw ---
-const RAD={cx:160,cy:150,r:105};
-const AX=[
-  {k:'acid',label:'酸質',color:'var(--acid)'},
-  {k:'sweet',label:'甘さ',color:'var(--sweet)'},
-  {k:'bitter',label:'苦味',color:'var(--bitter)'},
-  {k:'body',label:'ボディ',color:'var(--body)'}
-];
-function pt(i,frac){
-  const ang=-Math.PI/2 + i*(2*Math.PI/AX.length);
-  return [RAD.cx+Math.cos(ang)*RAD.r*frac, RAD.cy+Math.sin(ang)*RAD.r*frac];
-}
-function drawRadar(){
-  const p=profile();
-  let s='';
-  // rings
-  [.25,.5,.75,1].forEach(f=>{
-    let pts=AX.map((_,i)=>pt(i,f).join(',')).join(' ');
-    s+=`<polygon points="${pts}" fill="none" stroke="var(--line)" stroke-width="1"/>`;
-  });
-  // spokes + labels
-  AX.forEach((a,i)=>{
-    const[ex,ey]=pt(i,1);
-    s+=`<line x1="${RAD.cx}" y1="${RAD.cy}" x2="${ex}" y2="${ey}" stroke="var(--line)" stroke-width="1"/>`;
-    const[lx,ly]=pt(i,1.2);
-    s+=`<text x="${lx}" y="${ly}" font-family="'Zen Kaku Gothic New'" font-size="13" font-weight="700" fill="${a.color}" text-anchor="middle" dominant-baseline="middle">${a.label}</text>`;
-  });
-  // data polygon
-  const dpts=AX.map((a,i)=>pt(i,p[a.k]/100).join(',')).join(' ');
-  s+=`<polygon points="${dpts}" fill="rgba(212,71,31,.16)" stroke="var(--acid)" stroke-width="2.5"/>`;
-  AX.forEach((a,i)=>{
-    const[x,y]=pt(i,p[a.k]/100);
-    s+=`<circle cx="${x}" cy="${y}" r="4" fill="${a.color}"/>`;
-  });
-  $('radar').innerHTML=s;
-  updateCur(p);
-}
-
-// --- current recipe text ---
-function recipeStr(){
-  return `挽き ${grindLabel(+grind.value)} / 時間 ${fmtTime(+time.value)} / 湯温 ${temp.value}°C`;
-}
-function updateCur(p){
-  p=p||profile();
-  $('curCol').innerHTML=
-    `<div><b>${recipeStr()}</b></div>
-     <div style="margin-top:6px">酸 ${Math.round(p.acid)}・甘 ${Math.round(p.sweet)}・苦 ${Math.round(p.bitter)}・体 ${Math.round(p.body)}</div>`;
-}
-
-// --- update display ---
-function render(){
-  $('grindV').textContent=grindLabel(+grind.value);
-  $('timeV').textContent=fmtTime(+time.value);
-  $('tempV').textContent=temp.value+'°C';
-  drawRadar();
-}
-[grind,time,temp].forEach(el=>el.addEventListener('input',render));
-
-// --- comparison memory (in-session only) ---
-let saved=null;
-$('saveCurrent').addEventListener('click',()=>{
-  const p=profile();
-  saved={recipe:recipeStr(),p,predict:$('predict').value,actual:$('actual').value};
-  toast('「今回」を記録しました');
-});
-$('pushPrev').addEventListener('click',()=>{
-  const cur=saved||{recipe:recipeStr(),p:profile()};
-  $('prevCol').innerHTML=
-    `<div class="recipe"><b>${cur.recipe}</b><br>
-     酸 ${Math.round(cur.p.acid)}・甘 ${Math.round(cur.p.sweet)}・苦 ${Math.round(cur.p.bitter)}・体 ${Math.round(cur.p.body)}</div>`+
-     (cur.actual?`<div class="note">評価: ${cur.actual}</div>`:'');
-  toast('「前回」に送りました');
-});
-
-// --- send to Claude ---
-$('sendClaude').addEventListener('click',()=>{
-  const p=profile();
-  const msg=
-`【Ch.5 振り返り】
-レシピ: ${recipeStr()}
-推定プロファイル: 酸${Math.round(p.acid)} / 甘${Math.round(p.sweet)} / 苦${Math.round(p.bitter)} / ボディ${Math.round(p.body)}
-
-① 予測: ${$('predict').value||'(未記入)'}
-② 実際: ${$('actual').value||'(未記入)'}
-③ 差分: ${$('diff').value||'(未記入)'}
-仮説: ${$('hypo').value||'(未記入)'}
-
-この差分について、問いを返してください。`;
-  if(window.sendPrompt){sendPrompt(msg);}
-  else{navigator.clipboard?.writeText(msg);toast('コピーしました。チャットに貼り付けてください');}
-});
-
-function toast(t){const el=$('toast');el.textContent=t;el.classList.add('show');
-  clearTimeout(el._t);el._t=setTimeout(()=>el.classList.remove('show'),2400);}
-
-render();updateCur();
-</script>
 </body>
 </html>

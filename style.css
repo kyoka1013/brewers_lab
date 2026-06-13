@@ -1,0 +1,187 @@
+/* Brewers Lab — Shared Stylesheet */
+:root{
+  --ink:#1a1410;
+  --ink-2:#3a2e23;
+  --paper:#f5efe4;
+  --paper-2:#ece3d3;
+  --paper-3:#e2d6c0;
+  --line:#c9bca3;
+  --line-strong:#a89878;
+  --muted:#7a6e5c;
+  --muted-2:#5c5040;
+  --accent:#c08a3e;
+  --accent-deep:#9a6a28;
+  --under:#5b8aa6;
+  --over:#9a3b2e;
+  --good:#5c8a6e;
+  --warn:#c1452a;
+  --acid:#7a8a2e;
+  --sweet:#c08a3e;
+  --bitter:#8a4a6a;
+  --body-c:#5c6b41;
+  --after:#5b8aa6;
+  --shadow:0 1px 0 rgba(0,0,0,.04), 0 8px 24px -16px rgba(40,28,12,.35);
+  --radius:8px;
+  --radius-s:5px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--paper);
+  color:var(--ink);
+  font-family:"Hiragino Kaku Gothic ProN","Yu Gothic","Segoe UI",system-ui,-apple-system,sans-serif;
+  line-height:1.65;
+  -webkit-font-smoothing:antialiased;
+  font-size:15px;
+}
+
+/* ==== nav ==== */
+.sitenav{background:var(--ink);border-bottom:1px solid var(--ink-2);padding:0;position:sticky;top:0;z-index:50}
+.sitenav .inner{max-width:1100px;margin:0 auto;padding:9px 16px;display:flex;align-items:center;gap:4px;flex-wrap:wrap}
+.sitenav a{color:#bdae97;text-decoration:none;font-size:12.5px;padding:5px 10px;border-radius:6px;transition:.15s}
+.sitenav a:hover{color:var(--paper)}
+.sitenav a.brand{color:var(--paper);font-weight:700;font-size:14px;letter-spacing:.04em;margin-right:10px}
+.sitenav a.active{background:var(--accent);color:#fff;font-weight:700}
+.sitenav .sep{flex:1}
+.sitenav .user{color:#bdae97;font-size:12px;padding:5px 10px;display:flex;align-items:center;gap:8px}
+.sitenav .user button{background:transparent;border:1px solid #4a3d2e;color:#bdae97;font-size:11px;padding:3px 9px;border-radius:5px;cursor:pointer;font-family:inherit}
+.sitenav .user button:hover{border-color:var(--accent);color:var(--accent)}
+
+/* ==== layout ==== */
+.wrap{max-width:880px;margin:0 auto;padding:30px 20px 80px}
+.wrap.narrow{max-width:760px}
+.wrap.wide{max-width:1080px}
+header.page{border-bottom:2px solid var(--ink);padding-bottom:20px;margin-bottom:26px}
+.eyebrow{font-size:11px;letter-spacing:.3em;text-transform:uppercase;color:var(--muted);margin:0 0 8px}
+h1{font-size:clamp(26px,5vw,36px);margin:0 0 8px;letter-spacing:.01em;line-height:1.15;font-weight:700}
+.lede{font-size:14.5px;color:var(--muted);margin:0;max-width:640px;line-height:1.7}
+h2{font-size:20px;margin:32px 0 8px;padding-bottom:7px;border-bottom:1px solid var(--line);font-weight:700}
+h3{font-size:16px;margin:22px 0 6px;font-weight:700}
+p{margin:0 0 12px}
+a{color:var(--accent)}
+a:hover{color:var(--accent-deep)}
+
+/* ==== panels ==== */
+.panel{background:var(--paper-2);border:1px solid var(--line);border-radius:var(--radius);padding:18px 20px;margin-bottom:16px}
+.panel h3{margin-top:0}
+.panel.key{border-left:3px solid var(--accent);border-radius:0 var(--radius) var(--radius) 0}
+.panel.dark{background:var(--ink);color:var(--paper);border-color:var(--ink-2)}
+.panel.dark h3{color:var(--paper)}
+.panel.dark .muted{color:#bdae97}
+.lab{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:700;margin:0 0 8px}
+.muted{color:var(--muted)}
+.small{font-size:12.5px}
+.tiny{font-size:11px}
+
+/* ==== forms ==== */
+label.fld{display:block;font-size:12px;color:var(--muted);margin:14px 0 5px;font-weight:600;letter-spacing:.02em}
+input[type=text],input[type=number],input[type=password],input[type=email],input[type=date],textarea,select{
+  width:100%;background:var(--paper);border:1px solid var(--line);border-radius:var(--radius-s);
+  color:var(--ink);padding:9px 11px;font-size:14px;font-family:inherit;line-height:1.4;
+}
+textarea{resize:vertical;min-height:64px}
+select{cursor:pointer;background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%);
+  background-position:calc(100% - 16px) 50%,calc(100% - 11px) 50%;background-size:5px 5px;background-repeat:no-repeat;
+  -webkit-appearance:none;appearance:none;padding-right:32px;}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:var(--accent)}
+
+.row{display:flex;gap:12px;flex-wrap:wrap}
+.row>div{flex:1;min-width:140px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.row3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.row4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+@media(max-width:600px){.row2,.row3,.row4{grid-template-columns:1fr}}
+
+/* ==== buttons ==== */
+button,.btn{font-family:inherit;cursor:pointer;border:1px solid var(--ink);background:var(--paper);
+  color:var(--ink);padding:9px 16px;border-radius:var(--radius-s);font-size:13.5px;font-weight:600;
+  transition:.12s;text-decoration:none;display:inline-block}
+button:hover,.btn:hover{background:var(--paper-3)}
+button.primary,.btn.primary{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+button.primary:hover,.btn.primary:hover{background:var(--accent);border-color:var(--accent);color:#fff}
+button.accent,.btn.accent{background:var(--accent);color:#fff;border-color:var(--accent)}
+button.accent:hover,.btn.accent:hover{background:var(--accent-deep);border-color:var(--accent-deep)}
+button.ghost,.btn.ghost{background:transparent}
+button.danger,.btn.danger{border-color:var(--over);color:var(--over)}
+button.danger:hover,.btn.danger:hover{background:var(--over);color:#fff}
+button:disabled{opacity:.5;cursor:not-allowed}
+button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.btnrow{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+
+/* ==== choice chips (segmented) ==== */
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+.chip{font-family:inherit;cursor:pointer;border:1px solid var(--line);background:var(--paper);
+  color:var(--ink);padding:7px 13px;border-radius:18px;font-size:13px;transition:.12s}
+.chip:hover{border-color:var(--accent)}
+.chip.on{background:var(--ink);color:var(--paper);border-color:var(--ink);font-weight:600}
+.chip.small{padding:5px 10px;font-size:12px}
+
+/* ==== tables ==== */
+table{width:100%;border-collapse:collapse;font-size:13.5px;margin:10px 0}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{color:var(--muted);font-weight:700;font-size:12px;letter-spacing:.04em}
+.num{font-variant-numeric:tabular-nums;white-space:nowrap}
+
+/* ==== misc ==== */
+.pill{display:inline-block;font-size:11px;padding:2px 9px;border-radius:12px;border:1px solid var(--line);background:var(--paper);margin-right:4px;letter-spacing:.02em}
+.pill.u{color:var(--under);border-color:var(--under)}
+.pill.o{color:var(--over);border-color:var(--over)}
+.pill.g{color:var(--good);border-color:var(--good)}
+.pill.solid{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.tag{display:inline-block;font-size:11px;padding:2px 8px;border-radius:10px;background:var(--paper-3);color:var(--ink-2)}
+
+.note{background:var(--paper-2);border-left:3px solid var(--accent);padding:12px 16px;
+  border-radius:0 var(--radius-s) var(--radius-s) 0;font-size:13px;color:var(--muted);margin:14px 0;line-height:1.7}
+.note b{color:var(--ink)}
+.caveat{font-size:12.5px;color:var(--muted);font-style:italic;border-left:2px solid var(--line);padding-left:12px;margin:12px 0}
+
+/* ==== chapter cards ==== */
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px}
+.card{background:var(--paper-2);border:1px solid var(--line);border-radius:var(--radius);
+  padding:18px;text-decoration:none;color:var(--ink);display:flex;flex-direction:column;
+  transition:.15s}
+.card:hover{border-color:var(--accent);transform:translateY(-2px);box-shadow:var(--shadow);color:var(--ink)}
+.card .ch{font-size:11px;letter-spacing:.1em;color:var(--accent);font-weight:700;margin-bottom:6px}
+.card .ti{font-size:16px;font-weight:700;margin:0 0 6px;line-height:1.3}
+.card .ds{font-size:13px;color:var(--muted);margin:0;line-height:1.6}
+.card .var{margin-top:12px;font-size:11px;background:var(--paper);border:1px solid var(--line);
+  border-radius:5px;padding:4px 8px;display:inline-block;align-self:flex-start}
+
+/* ==== prompt block ==== */
+.promptbox{background:var(--ink);color:#e8dec9;border-radius:var(--radius);padding:16px;margin:14px 0;position:relative;font-family:"SF Mono","Menlo","Consolas",monospace;font-size:12.5px;line-height:1.6;white-space:pre-wrap;word-break:break-word;max-height:340px;overflow-y:auto}
+.promptbox .copy{position:absolute;top:10px;right:10px;background:var(--accent);color:#fff;border:none;font-size:11px;padding:5px 11px;border-radius:5px;cursor:pointer;font-family:inherit;font-weight:600}
+.promptbox .copy:hover{background:var(--accent-deep)}
+
+/* ==== auth gate ==== */
+.gate{max-width:380px;margin:80px auto;padding:30px;background:var(--paper-2);border:1px solid var(--line);border-radius:var(--radius);text-align:center}
+.gate h1{font-size:22px;margin:0 0 6px}
+.gate p{color:var(--muted);font-size:13px;margin:0 0 22px}
+.gate input{margin-bottom:10px;text-align:left}
+.gate .switch{margin-top:14px;font-size:12.5px;color:var(--muted)}
+.gate .switch a{cursor:pointer;color:var(--accent);text-decoration:none}
+
+/* ==== sliders / axes ==== */
+input[type=range]{width:100%;height:24px;cursor:pointer;accent-color:var(--accent)}
+.axis{margin:14px 0}
+.axis .top{display:flex;justify-content:space-between;align-items:baseline;font-size:13px;margin-bottom:4px}
+.axis .top b{font-size:15px;font-variant-numeric:tabular-nums}
+.axis .ends{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-top:2px}
+
+/* ==== tabs ==== */
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin:18px 0 16px;border-bottom:1px solid var(--line);padding-bottom:0}
+.tabs button{background:transparent;border:none;border-bottom:2px solid transparent;color:var(--muted);
+  padding:9px 14px;font-size:13.5px;cursor:pointer;border-radius:0;font-weight:600;font-family:inherit}
+.tabs button.on{color:var(--ink);border-bottom-color:var(--accent)}
+.tabs button:hover{color:var(--ink)}
+.view{display:none}.view.on{display:block}
+
+/* ==== recipe card preview ==== */
+#recipe-card-canvas{max-width:100%;height:auto;border-radius:var(--radius);box-shadow:var(--shadow);background:var(--paper-2)}
+
+/* ==== footer ==== */
+footer.site{margin-top:50px;padding:24px 0 0;border-top:1px solid var(--line);font-size:12px;color:var(--muted);text-align:center}
+
+/* ==== scrollbars (subtle) ==== */
+.promptbox::-webkit-scrollbar{width:8px}
+.promptbox::-webkit-scrollbar-thumb{background:#4a3d2e;border-radius:4px}
+.promptbox::-webkit-scrollbar-track{background:transparent}

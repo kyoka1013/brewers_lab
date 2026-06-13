@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>マイレシピ — Brewers Lab</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<script src="app.js"></script>
+<script>if(!BrewersLab.Auth.require()){}else BrewersLab.renderNav('recipes');</script>
+
+<div class="wrap">
+  <header class="page">
+    <p class="eyebrow">My Recipes</p>
+    <h1>マイレシピ</h1>
+    <p class="lede">お気に入りに保存した「決定版レシピ」を一覧。JPEGカードを生成して保存・共有できる。</p>
+  </header>
+
+  <h2>レシピ一覧 <span class="small muted" id="rcount"></span></h2>
+  <div id="rlist"></div>
+
+  <!-- card preview -->
+  <h2 id="cardHead" style="display:none">JPEGカード プレビュー</h2>
+  <div id="cardArea" style="display:none">
+    <canvas id="recipe-card-canvas" width="1200" height="1500"></canvas>
+    <div class="btnrow">
+      <button class="accent" onclick="downloadCard()">⬇ JPEGをダウンロード</button>
+      <button class="ghost" onclick="hideCard()">閉じる</button>
+    </div>
+  </div>
+
+  <div class="btnrow" style="margin-top:30px">
+    <a class="btn ghost" href="ch3.html">← レシピ開発</a>
+    <a class="btn" href="log.html">記録一覧</a>
+  </div>
+</div>
+
+<script>
+(function(){
+  var BL=BrewersLab;
+  var currentRecipe=null;
+
+  function render(){
+    var rs=BL.DB.listRecipes();
+    document.getElementById('rcount').textContent='（'+rs.length+'件）';
+    var list=document.getElementById('rlist'); list.innerHTML='';
+    if(rs.length===0){
+      list.appendChild(BL.el('div',{class:'panel'},'まだレシピがありません。Ch.3で「お気に入りレシピとして保存」をクリックすると追加されます。'));
+      return;
+    }
+    rs.forEach(function(r){
+      var card=BL.el('div',{class:'panel'});
+      card.appendChild(BL.el('h3',{style:{margin:'0 0 4px'}},r.recipeName||r.beanName));
+      card.appendChild(BL.el('div',{class:'small muted'},(r.beanName||'')+' · '+BL.fmtDate(r.createdAt)));
+      var spec=BL.el('div',{class:'small',style:{marginTop:'10px',lineHeight:'1.85'}});
+      var bits=[];
+      if(r.dripper) bits.push('🫗 '+r.dripper);
+      if(r.filter) bits.push('📃 '+r.filter);
+      if(r.grinder) bits.push('⚙️ '+r.grinder);
+      if(r.grind) bits.push('🌰 '+r.grind);
+      if(r.dose&&r.waterAmt) bits.push('⚖ '+r.dose+'g / '+r.waterAmt+'g ('+r.ratio+')');
+      if(r.temp) bits.push('🌡 '+r.temp);
+      if(r.bloom) bits.push('💧 蒸らし '+r.bloom);
+      if(r.totalTime) bits.push('⏱ '+r.totalTime);
+      if(r.pourPattern) bits.push('🔃 '+r.pourPattern);
+      spec.innerHTML=bits.join('<br>');
+      card.appendChild(spec);
+      if(r.notes){
+        card.appendChild(BL.el('div',{class:'small',style:{marginTop:'10px',fontStyle:'italic',color:'var(--muted)'}},'“'+r.notes+'”'));
+      }
+
+      var actions=BL.el('div',{class:'btnrow'});
+      actions.appendChild(BL.el('button',{class:'accent',onclick:function(){ showCard(r); }},'🎨 JPEGカードを生成'));
+      actions.appendChild(BL.el('button',{class:'ghost',onclick:function(){ loadIntoCh3(r); }},'Ch.3で再現する'));
+      actions.appendChild(BL.el('button',{class:'danger',onclick:function(){
+        if(confirm('このレシピを削除しますか？')){ BL.DB.deleteRecipe(r.id); render(); }
+      }},'削除'));
+      card.appendChild(actions);
+      list.appendChild(card);
+    });
+  }
+
+  function loadIntoCh3(r){
+    // store in temporary slot
+    sessionStorage.setItem('blab_recipe_load', JSON.stringify(r));
+    alert('Ch.3 でこのレシピを開きます。\n（手動再現が前提です。Ch.3を開いたら値を確認してください）');
+    location.href='ch3.html';
+  }
+
+  // ====== Recipe Card Generation ======
+  function showCard(r){
+    currentRecipe=r;
+    document.getElementById('cardHead').style.display='block';
+    document.getElementById('cardArea').style.display='block';
+    drawCard(r);
+    document.getElementById('cardArea').scrollIntoView({behavior:'smooth'});
+  }
+  window.hideCard=function(){
+    document.getElementById('cardHead').style.display='none';
+    document.getElementById('cardArea').style.display='none';
+  };
+
+  function drawCard(r){
+    var cv=document.getElementById('recipe-card-canvas');
+    var ctx=cv.getContext('2d');
+    var W=cv.width, H=cv.height;
+
+    // ----- background (craft paper texture) -----
+    ctx.fillStyle='#f5efe4'; ctx.fillRect(0,0,W,H);
+    // subtle noise
+    var img=ctx.getImageData(0,0,W,H);
+    for(var i=0;i<img.data.length;i+=4){
+      var n=(Math.random()-0.5)*6;
+      img.data[i]+=n; img.data[i+1]+=n; img.data[i+2]+=n;
+    }
+    ctx.putImageData(img,0,0);
+
+    // ----- inner border -----
+    ctx.strokeStyle='#c9bca3'; ctx.lineWidth=2;
+    ctx.strokeRect(40,40,W-80,H-80);
+    ctx.strokeStyle='#1a1410'; ctx.lineWidth=4;
+    ctx.strokeRect(60,60,W-120,H-120);
+
+    var pad=110;
+
+    // ----- eyebrow -----
+    ctx.fillStyle='#7a6e5c';
+    ctx.font='600 28px "Hiragino Kaku Gothic ProN","Yu Gothic","Helvetica",sans-serif';
+    ctx.textAlign='left';
+    ctx.fillText('☕ BREWERS LAB · RECIPE', pad, pad+30);
+
+    // accent line
+    ctx.strokeStyle='#c08a3e'; ctx.lineWidth=4;
+    ctx.beginPath(); ctx.moveTo(pad, pad+60); ctx.lineTo(pad+120, pad+60); ctx.stroke();
+
+    // ----- title -----
+    ctx.fillStyle='#1a1410';
+    ctx.font='700 64px "Hiragino Kaku Gothic ProN","Yu Gothic",serif';
+    var title = r.recipeName||r.beanName||'My Recipe';
+    wrapText(ctx, title, pad, pad+130, W-pad*2, 76);
+
+    // bean subtitle
+    ctx.fillStyle='#5c5040';
+    ctx.font='400 32px "Hiragino Kaku Gothic ProN","Yu Gothic",sans-serif';
+    var sub=[]; if(r.beanName&&r.beanName!==title) sub.push(r.beanName); if(r.origin) sub.push(r.origin); if(r.process) sub.push(r.process);
+    ctx.fillText(sub.join(' · '), pad, pad+250);
+
+    // ----- spec grid -----
+    var gy=pad+340;
+    ctx.strokeStyle='#c9bca3'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(pad,gy-30); ctx.lineTo(W-pad,gy-30); ctx.stroke();
+
+    var col1x=pad, col2x=W/2+20;
+    var rowy=gy+30;
+    function specRow(x,y,label,val){
+      if(!val) return;
+      ctx.fillStyle='#7a6e5c';
+      ctx.font='600 22px "Hiragino Kaku Gothic ProN",sans-serif';
+      ctx.fillText(label, x, y);
+      ctx.fillStyle='#1a1410';
+      ctx.font='700 38px "Hiragino Kaku Gothic ProN",sans-serif';
+      // truncate long values
+      var maxw=W/2-pad-20;
+      var v=String(val);
+      while(ctx.measureText(v).width>maxw && v.length>4){ v=v.slice(0,-1); }
+      if(v!==String(val)) v=v.slice(0,-1)+'…';
+      ctx.fillText(v, x, y+50);
+    }
+
+    // left column
+    var lefty=rowy;
+    specRow(col1x, lefty, 'DOSE / WATER', (r.dose||'?')+'g / '+(r.waterAmt||'?')+'g'); lefty+=120;
+    specRow(col1x, lefty, 'RATIO', r.ratio||''); lefty+=120;
+    specRow(col1x, lefty, 'GRIND', r.grind||''); lefty+=120;
+    specRow(col1x, lefty, 'TEMP', r.temp||''); lefty+=120;
+
+    // right column
+    var righty=rowy;
+    specRow(col2x, righty, 'DRIPPER', r.dripper||''); righty+=120;
+    specRow(col2x, righty, 'FILTER', r.filter||''); righty+=120;
+    specRow(col2x, righty, 'BLOOM', r.bloom||''); righty+=120;
+    specRow(col2x, righty, 'TOTAL', r.totalTime||''); righty+=120;
+
+    // pour pattern (full width)
+    var py=Math.max(lefty,righty)+10;
+    if(r.pourPattern){
+      ctx.fillStyle='#7a6e5c';
+      ctx.font='600 22px "Hiragino Kaku Gothic ProN",sans-serif';
+      ctx.fillText('POUR PATTERN', pad, py);
+      ctx.fillStyle='#1a1410';
+      ctx.font='600 28px "Hiragino Kaku Gothic ProN",sans-serif';
+      ctx.fillText(r.pourPattern, pad, py+44);
+      py+=90;
+    }
+
+    // ----- taste profile (radar lite) -----
+    if(r.acid||r.sweet||r.bitter||r.body||r.after){
+      ctx.fillStyle='#7a6e5c';
+      ctx.font='600 22px "Hiragino Kaku Gothic ProN",sans-serif';
+      ctx.fillText('TASTE PROFILE', pad, py+30);
+      var by=py+80;
+      ['酸質','甘さ','苦味','ボディ','余韻'].forEach(function(label,idx){
+        var keys=['acid','sweet','bitter','body','after'];
+        var val=+r[keys[idx]]||0;
+        var rowH=44;
+        ctx.fillStyle='#1a1410';
+        ctx.font='600 24px "Hiragino Kaku Gothic ProN",sans-serif';
+        ctx.fillText(label, pad, by+idx*rowH+20);
+        // bar
+        var bx=pad+150, bw=W-pad*2-150;
+        ctx.fillStyle='#e2d6c0';
+        ctx.fillRect(bx, by+idx*rowH+4, bw, 20);
+        ctx.fillStyle='#c08a3e';
+        ctx.fillRect(bx, by+idx*rowH+4, bw*(val/5), 20);
+        // value
+        ctx.fillStyle='#1a1410';
+        ctx.font='600 22px "Hiragino Kaku Gothic ProN",sans-serif';
+        ctx.textAlign='right';
+        ctx.fillText(val+'/5', W-pad, by+idx*rowH+20);
+        ctx.textAlign='left';
+      });
+      py=by+5*44+30;
+    }
+
+    // notes
+    if(r.notes){
+      ctx.fillStyle='#5c5040';
+      ctx.font='italic 26px "Hiragino Kaku Gothic ProN",sans-serif';
+      var nxt=wrapText(ctx, '"'+r.notes+'"', pad, py+30, W-pad*2, 36);
+      py=nxt;
+    }
+
+    // ----- footer -----
+    ctx.fillStyle='#7a6e5c';
+    ctx.font='400 22px "Hiragino Kaku Gothic ProN",sans-serif';
+    ctx.textAlign='left';
+    ctx.fillText('by '+BL.Auth.current()+' · '+BL.fmtDate(r.createdAt), pad, H-pad+30);
+    ctx.textAlign='right';
+    ctx.fillText('brewers-lab', W-pad, H-pad+30);
+    ctx.textAlign='left';
+  }
+
+  function wrapText(ctx, text, x, y, maxw, lineH){
+    var words=text.split('');
+    var line='', cy=y;
+    for(var i=0;i<words.length;i++){
+      var test=line+words[i];
+      if(ctx.measureText(test).width>maxw && line){
+        ctx.fillText(line,x,cy); line=words[i]; cy+=lineH;
+      } else line=test;
+    }
+    if(line) ctx.fillText(line,x,cy);
+    return cy+lineH;
+  }
+
+  window.downloadCard=function(){
+    if(!currentRecipe) return;
+    var cv=document.getElementById('recipe-card-canvas');
+    var data=cv.toDataURL('image/jpeg', 0.92);
+    var a=document.createElement('a');
+    a.href=data;
+    a.download='recipe_'+(currentRecipe.recipeName||currentRecipe.beanName||'card').replace(/[^a-zA-Z0-9\u3040-\u9faf]/g,'_')+'.jpg';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  };
+
+  render();
+})();
+</script>
+</body>
+</html>

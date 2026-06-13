@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ログイン — Brewers Lab</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<script src="app.js"></script>
+
+<div class="gate">
+  <h1>☕ Brewers Lab</h1>
+  <p>IDとパスワードでブラウザ内に個人のドリップ記録を持てます。<br>
+  <span class="tiny" style="opacity:.8">※ ブラウザのlocalStorageに保存。同じ端末・ブラウザでのみ参照可。</span></p>
+
+  <div id="loginView">
+    <input type="text" id="loginId" placeholder="ID（任意の文字列）" autocomplete="username">
+    <input type="password" id="loginPw" placeholder="パスワード" autocomplete="current-password">
+    <div id="loginMsg" class="small" style="color:var(--over);margin:6px 0 10px;min-height:18px"></div>
+    <button class="primary" style="width:100%" onclick="doLogin()">ログイン</button>
+    <div class="switch">アカウント未作成？ <a onclick="toSignup()">新規作成</a></div>
+  </div>
+
+  <div id="signupView" style="display:none">
+    <input type="text" id="signupId" placeholder="新しいID" autocomplete="username">
+    <input type="password" id="signupPw" placeholder="パスワード（3文字以上）" autocomplete="new-password">
+    <div id="signupMsg" class="small" style="color:var(--over);margin:6px 0 10px;min-height:18px"></div>
+    <button class="primary" style="width:100%" onclick="doSignup()">アカウント作成</button>
+    <div class="switch">既にあり？ <a onclick="toLogin()">ログインへ</a></div>
+  </div>
+</div>
+
+<script>
+function toSignup(){ document.getElementById('loginView').style.display='none'; document.getElementById('signupView').style.display='block'; }
+function toLogin(){ document.getElementById('loginView').style.display='block'; document.getElementById('signupView').style.display='none'; }
+function doLogin(){
+  var r=BrewersLab.Auth.login(document.getElementById('loginId').value, document.getElementById('loginPw').value);
+  if(r.ok) location.href='index.html';
+  else document.getElementById('loginMsg').textContent=r.msg;
+}
+function doSignup(){
+  var r=BrewersLab.Auth.signup(document.getElementById('signupId').value, document.getElementById('signupPw').value);
+  if(r.ok) location.href='index.html';
+  else document.getElementById('signupMsg').textContent=r.msg;
+}
+// auto enter
+['loginPw','signupPw'].forEach(function(id){
+  var el=document.getElementById(id);
+  el.addEventListener('keydown',function(e){if(e.key==='Enter'){ id==='loginPw'?doLogin():doSignup(); }});
+});
+// if already logged in
+if(BrewersLab.Auth.current()) location.href='index.html';
+</script>
+</body>
+</html>

@@ -3,501 +3,380 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Brewers Lab Ch.3 — 注湯設計シミュレーター</title>
-<style>
-  :root{
-    --ink:#1a1714;
-    --paper:#f3ede1;
-    --paper-deep:#e7dcc8;
-    --line:#cdbfa6;
-    --water:#3a6b8a;
-    --water-soft:#7fa6bc;
-    --ember:#c0532b;
-    --ember-deep:#9a3d1c;
-    --bloom:#d8a13a;
-    --leaf:#5c6b41;
-    --mute:#857a66;
-  }
-  *{box-sizing:border-box;margin:0;padding:0}
-  body{
-    background:
-      radial-gradient(circle at 20% -10%, #faf5ea 0%, transparent 45%),
-      var(--paper);
-    color:var(--ink);
-    font-family:"Hiragino Mincho ProN","Yu Mincho",serif;
-    line-height:1.6;
-    padding:0 0 80px;
-    -webkit-font-smoothing:antialiased;
-  }
-  .wrap{max-width:880px;margin:0 auto;padding:0 22px}
-  header{
-    border-bottom:2px solid var(--ink);
-    padding:38px 22px 22px;
-    max-width:880px;margin:0 auto;
-  }
-  .eyebrow{
-    font-family:"Helvetica Neue",sans-serif;
-    font-size:11px;letter-spacing:.34em;text-transform:uppercase;
-    color:var(--ember-deep);font-weight:700;
-  }
-  h1{
-    font-size:clamp(28px,5vw,42px);line-height:1.15;
-    margin:6px 0 4px;font-weight:600;letter-spacing:.01em;
-  }
-  .sub{color:var(--mute);font-size:14px;font-family:"Helvetica Neue",sans-serif}
-  section{margin-top:38px}
-  .lbl{
-    font-family:"Helvetica Neue",sans-serif;font-size:11px;
-    letter-spacing:.28em;text-transform:uppercase;color:var(--ember-deep);
-    font-weight:700;border-bottom:1px solid var(--line);
-    padding-bottom:6px;margin-bottom:18px;display:flex;justify-content:space-between;align-items:baseline;
-  }
-  .lbl span{color:var(--mute);letter-spacing:.05em}
-
-  /* controls */
-  .ctrl{
-    display:flex;align-items:center;gap:14px;margin:14px 0;
-    font-family:"Helvetica Neue",sans-serif;
-  }
-  .ctrl label{flex:0 0 130px;font-size:13px;color:var(--ink)}
-  .ctrl input[type=range]{flex:1;accent-color:var(--water);height:4px}
-  .ctrl .val{
-    flex:0 0 58px;text-align:right;font-variant-numeric:tabular-nums;
-    font-weight:700;font-size:15px;color:var(--water);
-  }
-  .pours-grid{margin-top:8px}
-  .pour-row{
-    display:grid;grid-template-columns:64px 1fr 56px;gap:12px;align-items:center;
-    padding:9px 0;border-bottom:1px dashed var(--line);
-    font-family:"Helvetica Neue",sans-serif;
-  }
-  .pour-row .tag{font-size:12px;color:var(--mute);font-weight:700;letter-spacing:.05em}
-  .pour-row .tag.bloom{color:var(--bloom)}
-  .pour-row input[type=range]{accent-color:var(--ember)}
-  .pour-row .pct{text-align:right;font-weight:700;font-variant-numeric:tabular-nums;font-size:14px;color:var(--ember)}
-  .alloc-note{
-    font-family:"Helvetica Neue",sans-serif;font-size:12px;
-    margin-top:10px;padding:8px 12px;border-radius:3px;
-    background:var(--paper-deep);color:var(--mute);
-  }
-  .alloc-note.over{background:#f3d8cc;color:var(--ember-deep);font-weight:700}
-  .alloc-note.ok{background:#dde6da;color:var(--leaf);font-weight:700}
-
-  /* timeline */
-  .timeline-box{
-    background:#fcf8f0;border:1px solid var(--line);border-radius:4px;
-    padding:22px 18px 14px;margin-top:6px;
-  }
-  svg{display:block;width:100%;height:auto}
-  .tl-legend{
-    display:flex;gap:18px;flex-wrap:wrap;margin-top:12px;
-    font-family:"Helvetica Neue",sans-serif;font-size:11px;color:var(--mute);
-  }
-  .tl-legend i{display:inline-block;width:11px;height:11px;border-radius:2px;margin-right:5px;vertical-align:-1px}
-
-  /* readouts */
-  .readouts{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:18px}
-  .ro{
-    border:1px solid var(--line);border-radius:4px;padding:16px 14px;background:#fcf8f0;
-  }
-  .ro .k{font-family:"Helvetica Neue",sans-serif;font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:var(--mute)}
-  .ro .v{font-size:30px;font-weight:600;margin-top:4px;font-variant-numeric:tabular-nums}
-  .ro .v small{font-size:14px;color:var(--mute);font-weight:400}
-  .ro.accent .v{color:var(--ember)}
-  .ro.water .v{color:var(--water)}
-
-  /* extraction curve */
-  .curve-box{background:#fcf8f0;border:1px solid var(--line);border-radius:4px;padding:20px 16px 8px;margin-top:6px}
-
-  /* tasting */
-  .taste-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-  .taste-grid .full{grid-column:1/-1}
-  .field label{
-    display:block;font-family:"Helvetica Neue",sans-serif;font-size:12px;
-    letter-spacing:.05em;color:var(--mute);margin-bottom:5px;font-weight:700;
-  }
-  select,input[type=text],textarea{
-    width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:3px;
-    background:#fff;font-family:inherit;font-size:14px;color:var(--ink);
-  }
-  textarea{resize:vertical;min-height:64px}
-  .btn{
-    font-family:"Helvetica Neue",sans-serif;cursor:pointer;border:none;
-    padding:13px 22px;border-radius:3px;font-size:13px;font-weight:700;
-    letter-spacing:.08em;transition:.15s;
-  }
-  .btn-primary{background:var(--ink);color:var(--paper)}
-  .btn-primary:hover{background:var(--ember-deep)}
-  .btn-send{background:var(--ember);color:#fff;width:100%;margin-top:18px}
-  .btn-send:hover{background:var(--ember-deep)}
-  .diag{
-    margin-top:18px;border-left:4px solid var(--water);
-    background:#fcf8f0;padding:16px 18px;border-radius:0 4px 4px 0;display:none;
-  }
-  .diag.show{display:block}
-  .diag h3{font-size:16px;margin-bottom:6px}
-  .diag .tag{
-    display:inline-block;font-family:"Helvetica Neue",sans-serif;font-size:11px;
-    font-weight:700;letter-spacing:.1em;padding:3px 10px;border-radius:99px;
-    margin-bottom:10px;text-transform:uppercase;
-  }
-  .diag p{font-size:14px;margin-bottom:8px}
-  .diag .fix{font-family:"Helvetica Neue",sans-serif;font-size:13px;color:var(--leaf);font-weight:700}
-  footer{max-width:880px;margin:50px auto 0;padding:0 22px;color:var(--mute);font-size:12px;font-family:"Helvetica Neue",sans-serif;border-top:1px solid var(--line);padding-top:16px}
-  @media(max-width:620px){
-    .readouts{grid-template-columns:1fr}
-    .taste-grid{grid-template-columns:1fr}
-    .ctrl label{flex:0 0 100px}
-  }
-</style>
+<title>Ch.3 レシピ開発ラボ — Brewers Lab</title>
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
-<header>
-  <div class="eyebrow">Brewers Lab · Chapter 3</div>
-  <h1>総抽出時間と注湯設計</h1>
-  <div class="sub">Polaris % モードを軸に、注湯の配分・間隔・蒸らしから総抽出時間を組み立てる</div>
-</header>
+<script src="app.js"></script>
+<script>if(!BrewersLab.Auth.require()){}else BrewersLab.renderNav('ch3');</script>
 
 <div class="wrap">
+  <header class="page">
+    <p class="eyebrow">Chapter 3 · Recipe Lab</p>
+    <h1>レシピ開発ラボ</h1>
+    <p class="lede">挽き目・湯温・レシオ・ドリッパー・フィルター・注ぎ方・水・豆——すべての変数を一画面で。淹れたら保存、Claudeに評価を依頼、気に入ったらマイレシピへ。JPEGカード化も可能。</p>
+  </header>
 
-  <!-- POUR DESIGN -->
-  <section>
-    <div class="lbl">注湯設計 <span>POUR SCHEDULE</span></div>
-    <div class="ctrl">
-      <label>注湯回数</label>
-      <input type="range" id="pourCount" min="1" max="5" step="1" value="3">
-      <div class="val"><span id="pourCountV">3</span>投</div>
+  <div class="panel">
+    <h3>① 豆を選ぶ／登録</h3>
+    <div class="row2">
+      <div>
+        <label class="fld">豆を選ぶ（または新規登録）</label>
+        <select id="beanSelect"><option value="">— 新規入力 —</option></select>
+      </div>
+      <div>
+        <label class="fld">豆の名前</label>
+        <input type="text" id="beanName" placeholder="例: エチオピア イルガチェフェ（〇〇焙煎所）">
+      </div>
     </div>
-    <div class="ctrl">
-      <label>蒸らし時間</label>
-      <input type="range" id="bloomTime" min="20" max="60" step="5" value="40">
-      <div class="val"><span id="bloomTimeV">40</span>s</div>
+    <div class="row3">
+      <div>
+        <label class="fld">産地</label>
+        <select id="beanOrigin"></select>
+      </div>
+      <div>
+        <label class="fld">品種</label>
+        <select id="beanVariety"></select>
+      </div>
+      <div>
+        <label class="fld">精製</label>
+        <select id="beanProcess"></select>
+      </div>
     </div>
-    <div class="ctrl">
-      <label>投間インターバル</label>
-      <input type="range" id="interval" min="10" max="60" step="5" value="30">
-      <div class="val"><span id="intervalV">30</span>s</div>
+    <div class="row2">
+      <div>
+        <label class="fld">焙煎度</label>
+        <select id="beanRoast"></select>
+      </div>
+      <div>
+        <label class="fld">焙煎日</label>
+        <input type="date" id="beanRoastDate">
+      </div>
     </div>
-    <div class="ctrl">
-      <label>注湯速度</label>
-      <input type="range" id="pourSpeed" min="3" max="10" step="1" value="6">
-      <div class="val"><span id="pourSpeedV">6</span>g/s</div>
+    <div class="btnrow">
+      <button class="ghost" onclick="saveBean()">この豆を「豆リスト」に保存</button>
     </div>
+  </div>
 
-    <div class="pours-grid" id="poursGrid"></div>
-    <div class="alloc-note" id="allocNote"></div>
-  </section>
+  <div class="panel">
+    <h3>② 器具・水</h3>
+    <label class="fld">ドリッパー</label>
+    <div class="chips" id="ch-dripper"></div>
+    <label class="fld">フィルター</label>
+    <div class="chips" id="ch-filter"></div>
+    <label class="fld">グラインダー</label>
+    <div class="chips" id="ch-grinder"></div>
+    <label class="fld">水</label>
+    <div class="chips" id="ch-water"></div>
+  </div>
 
-  <!-- TIMELINE -->
-  <section>
-    <div class="lbl">タイムライン <span>POUR TIMELINE · % CUMULATIVE</span></div>
-    <div class="timeline-box">
-      <svg id="timeline" viewBox="0 0 800 240" preserveAspectRatio="xMidYMid meet"></svg>
-      <div class="tl-legend">
-        <span><i style="background:var(--bloom)"></i>蒸らし</span>
-        <span><i style="background:var(--water)"></i>注湯</span>
-        <span><i style="background:var(--water-soft)"></i>ドローダウン</span>
-        <span><i style="background:var(--line)"></i>累積 %（Polaris表示）</span>
+  <div class="panel">
+    <h3>③ 抽出パラメータ</h3>
+    <div class="row3">
+      <div>
+        <label class="fld">粉量（g）</label>
+        <input type="number" id="p-dose" value="15" step="0.5">
       </div>
-    </div>
-
-    <div class="readouts">
-      <div class="ro accent">
-        <div class="k">推定総抽出時間</div>
-        <div class="v"><span id="totalTime">—</span><small>（蒸らし→落ち切り）</small></div>
+      <div>
+        <label class="fld">湯量（g）</label>
+        <input type="number" id="p-water" value="240" step="5">
       </div>
-      <div class="ro water">
-        <div class="k">注湯完了</div>
-        <div class="v"><span id="pourDone">—</span></div>
+      <div>
+        <label class="fld">レシオ（自動 / Polaris連動）</label>
+        <input type="text" id="p-ratio" readonly>
       </div>
-      <div class="ro">
-        <div class="k">推定抽出率</div>
-        <div class="v"><span id="estExt">—</span><small>%</small></div>
-      </div>
-    </div>
-  </section>
-
-  <!-- CURVE -->
-  <section>
-    <div class="lbl">総抽出時間 × 抽出率 <span>TIME → EXTRACTION</span></div>
-    <div class="curve-box">
-      <svg id="curve" viewBox="0 0 800 280" preserveAspectRatio="xMidYMid meet"></svg>
-    </div>
-    <div class="alloc-note">SCAの目安は抽出率18〜22%。あなたの設計位置（●）が緑帯の内側に入っているかを見る。同じ豆・同じ挽き目なら、総抽出時間が伸びるほど抽出率は上がり、やがて頭打ち＆過抽出側へ。</div>
-  </section>
-
-  <!-- TASTING -->
-  <section>
-    <div class="lbl">淹れたあとの味評価 <span>TASTING → DIAGNOSIS</span></div>
-    <div class="taste-grid">
-      <div class="field">
-        <label>第一印象</label>
-        <select id="tFirst">
-          <option value="">選択…</option>
-          <option value="thin">薄い・水っぽい</option>
-          <option value="balanced">バランス良い</option>
-          <option value="heavy">重い・くどい</option>
-        </select>
-      </div>
-      <div class="field">
-        <label>酸味</label>
-        <select id="tAcid">
-          <option value="">選択…</option>
-          <option value="sharp">尖って酸っぱい</option>
-          <option value="bright">明るく心地よい</option>
-          <option value="flat">ぼやけて出ない</option>
-        </select>
-      </div>
-      <div class="field">
-        <label>甘み・余韻</label>
-        <select id="tSweet">
-          <option value="">選択…</option>
-          <option value="short">短い・乏しい</option>
-          <option value="sweet">甘く伸びる</option>
-          <option value="dry">渋く乾く</option>
-        </select>
-      </div>
-      <div class="field">
-        <label>苦味</label>
-        <select id="tBitter">
-          <option value="">選択…</option>
-          <option value="none">ほぼ無い</option>
-          <option value="pleasant">適度・心地よい</option>
-          <option value="harsh">エグ味・渋み</option>
-        </select>
-      </div>
-      <div class="field full">
-        <label>メモ（任意）</label>
-        <input type="text" id="tNote" placeholder="例：3投目の落ちが遅かった / 後半薄く感じた">
-      </div>
-    </div>
-    <button class="btn btn-primary" id="diagBtn" style="margin-top:16px">味を診断する</button>
-
-    <div class="diag" id="diag">
-      <span class="tag" id="diagTag"></span>
-      <h3 id="diagTitle"></h3>
-      <p id="diagBody"></p>
-      <p class="fix" id="diagFix"></p>
     </div>
 
-    <button class="btn btn-send" id="sendBtn">Claudeに振り返りを送る ↗</button>
-  </section>
+    <label class="fld">挽き目</label>
+    <div class="chips" id="ch-grind"></div>
+    <label class="fld">挽き目メモ（クリック数など、任意）</label>
+    <input type="text" id="p-grindMemo" placeholder="例: コマンダンテ 22クリック">
+
+    <label class="fld">湯温</label>
+    <div class="chips" id="ch-temp"></div>
+
+    <label class="fld">蒸らし時間</label>
+    <div class="chips" id="ch-bloom"></div>
+
+    <label class="fld">注湯パターン</label>
+    <div class="chips" id="ch-pourpat"></div>
+
+    <label class="fld">注ぎ方</label>
+    <div class="chips" id="ch-pourspeed"></div>
+
+    <label class="fld">総抽出時間</label>
+    <div class="chips" id="ch-totaltime"></div>
+  </div>
+
+  <div class="panel">
+    <h3>④ 味の評価</h3>
+    <p class="small muted">5軸を1〜5で。語彙は <a href="ch2.html">Ch.2の記述ビルダー</a> で作って貼り付けると精度が上がる。</p>
+    <div class="row" style="gap:18px">
+      <div><label class="fld">酸質</label><select id="t-acid"></select></div>
+      <div><label class="fld">甘さ</label><select id="t-sweet"></select></div>
+      <div><label class="fld">苦味</label><select id="t-bitter"></select></div>
+      <div><label class="fld">ボディ</label><select id="t-body"></select></div>
+      <div><label class="fld">余韻</label><select id="t-after"></select></div>
+      <div><label class="fld">総合</label><select id="t-overall"></select></div>
+    </div>
+    <label class="fld">フレーバーメモ・気づき（任意）</label>
+    <textarea id="t-notes" placeholder="例: レモン, 紅茶様, 後半やや軽い。挽き目を1段細かくしたら甘さが伸びるかも"></textarea>
+    <label class="fld">抽出の自己診断</label>
+    <div class="chips" id="ch-diag"></div>
+  </div>
+
+  <div class="panel key">
+    <h3>⑤ 保存とフィードバック</h3>
+    <div class="btnrow">
+      <button class="primary" onclick="saveBrew()">💾 ドリップを記録に保存</button>
+      <button class="accent" onclick="saveAsRecipe()">⭐ お気に入りレシピとして保存</button>
+      <button onclick="generatePrompt()">✉️ Claude用プロンプトを生成</button>
+      <button class="ghost" onclick="resetForm()">フォームをリセット</button>
+    </div>
+    <div id="saveMsg" class="small" style="margin-top:10px;color:var(--good)"></div>
+  </div>
+
+  <div class="panel dark" id="promptArea" style="display:none">
+    <h3 style="color:var(--paper)">Claude用プロンプト（コピーして新しいClaudeチャットに貼る）</h3>
+    <p class="small" style="color:#bdae97">下のプロンプトには「Claudeをドリップコーチに変えるロールプレイ指示」＋「いま記録した抽出データ」＋「フィードバックの依頼内容」が入っています。</p>
+    <div class="promptbox" id="promptOutput"></div>
+    <div class="btnrow">
+      <button class="accent" onclick="copyPrompt()">📋 全文コピー</button>
+    </div>
+  </div>
+
+  <h2>Claudeをコーチにするロールプレイ指示（常設）</h2>
+  <p>上の「Claude用プロンプト生成」が一番手早いが、自由に対話したいときはこの基本プロンプトを使う。</p>
+  <div class="promptbox" id="promptBase">あなたは Brewers Cup 競技経験者でもあるハンドドリップ・コーチです。SCA Brewing Handbook、Scott Rao の抽出理論、粕谷哲の 4:6 メソッド、Jonathan Gagné のフィルターコーヒー物理学を主な拠り所にし、日本のスペシャルティ文脈にも詳しい立場で答えてください。
+
+私は Brewers Lab Chapter 3「レシピ開発ラボ」を使って変数を管理しながらドリップを記録している中級者です。これから私の抽出記録を渡しますので、以下を行ってください：
+
+1. 抽出条件と味の関係を読み解き「未抽出/過抽出/バランス」の診断
+2. その味になった機序の仮説（どの変数がどう効いたか）
+3. 次に「1つだけ」動かすべき変数とその方向、期待される変化
+4. 同じレシピを再現したい場合のチェックポイント
+
+断定しすぎず、不確かな点は「仮説」と明記してください。
+
+私の記録：
+（ここに「Claude用プロンプトを生成」で出力された記録を貼り付けてください）<button class="copy" onclick="BrewersLab.copyToClipboard(document.getElementById('promptBase').firstChild.textContent, this)">コピー</button></div>
+
+  <div class="btnrow">
+    <a class="btn ghost" href="ch2.html">← 味の言語化</a>
+    <a class="btn primary" href="ch4.html">次へ：豆を知る →</a>
+    <a class="btn" href="log.html">記録を一覧で見る</a>
+    <a class="btn" href="recipes.html">マイレシピへ</a>
+  </div>
 </div>
 
-<footer>Polarisの%区切りを前提に。因果は体験から積み上げる。— Brewers Lab Ch.3</footer>
-
 <script>
-const $=id=>document.getElementById(id);
-const fmt=s=>{const m=Math.floor(s/60),x=Math.round(s%60);return m+":"+String(x).padStart(2,'0');};
+(function(){
+  var BL=BrewersLab, C=BL.Choices;
 
-let alloc=[]; // % per pour (bloom = pours[0])
-
-function defaultAlloc(n){
-  // bloom ~15%, rest spread descending-ish
-  if(n===1) return [100];
-  if(n===2) return [20,80];
-  if(n===3) return [15,45,40];
-  if(n===4) return [15,30,30,25];
-  return [15,25,25,20,15];
-}
-
-function buildPourRows(){
-  const n=+$('pourCount').value;
-  if(alloc.length!==n) alloc=defaultAlloc(n);
-  const g=$('poursGrid'); g.innerHTML='';
-  alloc.forEach((v,i)=>{
-    const isBloom=i===0;
-    const row=document.createElement('div');
-    row.className='pour-row';
-    row.innerHTML=`<div class="tag ${isBloom?'bloom':''}">${isBloom?'蒸らし':'第'+(i+1)+'投'}</div>
-      <input type="range" min="5" max="80" step="5" value="${v}" data-i="${i}">
-      <div class="pct">${v}%</div>`;
-    g.appendChild(row);
-    row.querySelector('input').addEventListener('input',e=>{
-      alloc[i]=+e.target.value;
-      row.querySelector('.pct').textContent=alloc[i]+'%';
-      render();
+  // populate selects from choices
+  function fillSelect(id,arr,allowCustomLater){
+    var sel=document.getElementById(id);
+    arr.forEach(function(o){
+      var op=document.createElement('option'); op.value=o; op.textContent=o; sel.appendChild(op);
     });
+  }
+  fillSelect('beanOrigin',C.origins);
+  fillSelect('beanVariety',C.varieties);
+  fillSelect('beanProcess',C.processes);
+  fillSelect('beanRoast',C.roastLevels);
+
+  // taste 1-5 selects
+  ['t-acid','t-sweet','t-bitter','t-body','t-after','t-overall'].forEach(function(id){
+    var s=document.getElementById(id);
+    s.appendChild(new Option('— 選択 —',''));
+    for(var i=1;i<=5;i++){ s.appendChild(new Option(i,i)); }
+    s.value='3';
   });
-}
 
-function timing(){
-  const bloom=+$('bloomTime').value;
-  const iv=+$('interval').value;
-  const n=alloc.length;
-  // schedule: t0 bloom pour, then bloom rest, then pours separated by interval
-  // approximate dose for pour duration via 250g water default ratio shown abstractly
-  const speed=+$('pourSpeed').value;
-  const totalWater=250; // reference for pour-duration visualization
-  const events=[];
-  let t=0;
-  for(let i=0;i<n;i++){
-    const grams=totalWater*alloc[i]/100;
-    const dur=grams/speed;
-    events.push({i,start:t,dur,pct:alloc[i],bloom:i===0});
-    if(i===0){ t=bloom; } // bloom rest after first pour completes
-    else { t=t+iv; }
+  // ===== chip groups (single select) =====
+  var picks={
+    dripper:'', filter:'', grinder:'', water:'',
+    grind:'', temp:'92℃', bloom:'30秒', pourpat:'', pourspeed:'', totaltime:'2:30', diag:''
+  };
+  function makeChipGroup(elId, list, key, allowAdd){
+    var box=document.getElementById(elId);
+    box.innerHTML='';
+    list.forEach(function(o){
+      var b=document.createElement('button');
+      b.className='chip small'+(picks[key]===o?' on':'');
+      b.type='button'; b.textContent=o;
+      b.onclick=function(){
+        picks[key]=o;
+        box.querySelectorAll('.chip').forEach(function(x){x.classList.remove('on');});
+        b.classList.add('on');
+      };
+      box.appendChild(b);
+    });
+    if(allowAdd){
+      var add=document.createElement('button');
+      add.className='chip small'; add.type='button'; add.textContent='＋追加';
+      add.onclick=function(){
+        var v=prompt('追加項目を入力'); if(!v||!v.trim()) return;
+        v=v.trim(); list.push(v); makeChipGroup(elId,list,key,allowAdd);
+        // auto select
+        picks[key]=v;
+        var nodes=document.getElementById(elId).querySelectorAll('.chip');
+        nodes.forEach(function(x){if(x.textContent===v) x.classList.add('on');});
+      };
+      box.appendChild(add);
+    }
   }
-  // ensure first pour duration doesn't exceed bloom
-  const pourEnd=events[n-1].start+events[n-1].dur;
-  const drawdown=Math.max(25, iv*0.9);
-  const total=pourEnd+drawdown;
-  return {events,bloom,iv,pourEnd,total,drawdown};
-}
+  makeChipGroup('ch-dripper',C.drippers,'dripper',true);
+  makeChipGroup('ch-filter',C.filters,'filter',true);
+  makeChipGroup('ch-grinder',C.grinders,'grinder',true);
+  makeChipGroup('ch-water',C.waterTypes,'water',true);
+  makeChipGroup('ch-grind',C.grindLevels,'grind',false);
+  makeChipGroup('ch-temp',C.temps,'temp',false);
+  makeChipGroup('ch-bloom',C.bloomTimes,'bloom',false);
+  makeChipGroup('ch-pourpat',C.pourPatterns,'pourpat',true);
+  makeChipGroup('ch-pourspeed',C.pourSpeed,'pourspeed',true);
+  makeChipGroup('ch-totaltime',C.totalTimes,'totaltime',false);
+  makeChipGroup('ch-diag',['未抽出ぎみ','やや未抽出','ちょうど良い','やや過抽出','過抽出ぎみ','判断中'],'diag',false);
 
-function estExtraction(total){
-  // monotonic saturating curve mapping time(s) -> extraction%
-  // ~150s≈18, ~210s≈20, ~300s≈22, plateau ~24
-  const e=24-9*Math.exp(-(total-90)/130);
-  return Math.max(14,Math.min(24,e));
-}
-
-function drawTimeline(T){
-  const W=800,H=240,padL=46,padR=20,padT=20,padB=46;
-  const maxT=Math.max(T.total,180);
-  const x=s=>padL+(W-padL-padR)*s/maxT;
-  let s='';
-  // axis
-  s+=`<line x1="${padL}" y1="${H-padB}" x2="${W-padR}" y2="${H-padB}" stroke="var(--ink)" stroke-width="1.5"/>`;
-  for(let tk=0;tk<=maxT;tk+=30){
-    s+=`<line x1="${x(tk)}" y1="${H-padB}" x2="${x(tk)}" y2="${H-padB+5}" stroke="var(--mute)"/>`;
-    s+=`<text x="${x(tk)}" y="${H-padB+20}" font-size="11" fill="var(--mute)" text-anchor="middle" font-family="Helvetica Neue,sans-serif">${fmt(tk)}</text>`;
+  // ratio auto
+  function updateRatio(){
+    var d=+document.getElementById('p-dose').value, w=+document.getElementById('p-water').value;
+    document.getElementById('p-ratio').value = d>0? '1:'+(w/d).toFixed(1) : '';
   }
-  // cumulative % line
-  let cum=0; const pts=[];
-  T.events.forEach(ev=>{ cum+=ev.pct; pts.push([x(ev.start+ev.dur), cum]); });
-  const yPct=p=>padT+(H-padT-padB)*(1-p/100);
-  let path='';
-  let prevX=x(0),prevY=yPct(0);
-  path+=`M ${prevX} ${prevY}`;
-  T.events.forEach(ev=>{
-    const ex=x(ev.start+ev.dur);
-    let c=0; for(let k=0;k<=ev.i;k++)c+=T.events[k].pct;
-    path+=` L ${x(ev.start)} ${prevY} L ${ex} ${yPct(c)}`;
-    prevY=yPct(c);
-  });
-  s+=`<path d="${path}" fill="none" stroke="var(--line)" stroke-width="2"/>`;
-  // pour blocks
-  T.events.forEach(ev=>{
-    const col=ev.bloom?'var(--bloom)':'var(--water)';
-    s+=`<rect x="${x(ev.start)}" y="${padT}" width="${Math.max(3,x(ev.start+ev.dur)-x(ev.start))}" height="${H-padT-padB}" fill="${col}" opacity="0.28"/>`;
-    s+=`<line x1="${x(ev.start)}" y1="${padT}" x2="${x(ev.start)}" y2="${H-padB}" stroke="${col}" stroke-width="2"/>`;
-    s+=`<text x="${x(ev.start)+3}" y="${padT+13}" font-size="10" fill="${ev.bloom?'var(--bloom)':'var(--water)'}" font-family="Helvetica Neue,sans-serif" font-weight="700">${ev.bloom?'蒸':'第'+(ev.i+1)}</text>`;
-  });
-  // bloom rest shading
-  s+=`<rect x="${x(T.events[0].dur)}" y="${padT}" width="${x(T.bloom)-x(T.events[0].dur)}" height="${H-padT-padB}" fill="var(--bloom)" opacity="0.08"/>`;
-  // drawdown
-  s+=`<rect x="${x(T.pourEnd)}" y="${padT}" width="${x(T.total)-x(T.pourEnd)}" height="${H-padT-padB}" fill="var(--water-soft)" opacity="0.22"/>`;
-  s+=`<text x="${(x(T.pourEnd)+x(T.total))/2}" y="${H-padB-8}" font-size="10" fill="var(--water)" text-anchor="middle" font-family="Helvetica Neue,sans-serif">落ち切り</text>`;
-  $('timeline').innerHTML=s;
-}
+  ['p-dose','p-water'].forEach(function(id){ document.getElementById(id).addEventListener('input',updateRatio); });
+  updateRatio();
 
-function drawCurve(total){
-  const W=800,H=280,padL=50,padR=24,padT=18,padB=42;
-  const minT=60,maxT=360;
-  const x=t=>padL+(W-padL-padR)*(t-minT)/(maxT-minT);
-  const y=e=>padT+(H-padT-padB)*(1-(e-14)/(24-14));
-  let s='';
-  // SCA band 18-22
-  s+=`<rect x="${padL}" y="${y(22)}" width="${W-padL-padR}" height="${y(18)-y(22)}" fill="var(--leaf)" opacity="0.15"/>`;
-  s+=`<text x="${W-padR-6}" y="${y(20)}" font-size="11" fill="var(--leaf)" text-anchor="end" font-family="Helvetica Neue,sans-serif" font-weight="700">SCA 18–22%</text>`;
-  // axes
-  s+=`<line x1="${padL}" y1="${H-padB}" x2="${W-padR}" y2="${H-padB}" stroke="var(--ink)"/>`;
-  s+=`<line x1="${padL}" y1="${padT}" x2="${padL}" y2="${H-padB}" stroke="var(--ink)"/>`;
-  for(let tk=60;tk<=360;tk+=60){
-    s+=`<text x="${x(tk)}" y="${H-padB+18}" font-size="11" fill="var(--mute)" text-anchor="middle" font-family="Helvetica Neue,sans-serif">${fmt(tk)}</text>`;
+  // bean list integration
+  function refreshBeanList(){
+    var sel=document.getElementById('beanSelect');
+    sel.innerHTML=''; sel.appendChild(new Option('— 新規入力 —',''));
+    BL.DB.listBeans().forEach(function(b){
+      sel.appendChild(new Option(b.name, b.id));
+    });
   }
-  for(let e=14;e<=24;e+=2){
-    s+=`<text x="${padL-8}" y="${y(e)+4}" font-size="11" fill="var(--mute)" text-anchor="end" font-family="Helvetica Neue,sans-serif">${e}%</text>`;
-    s+=`<line x1="${padL}" y1="${y(e)}" x2="${W-padR}" y2="${y(e)}" stroke="var(--line)" stroke-dasharray="2 4"/>`;
+  refreshBeanList();
+  document.getElementById('beanSelect').onchange=function(){
+    var id=this.value; if(!id) return;
+    var b=BL.DB.listBeans().filter(function(x){return x.id===id;})[0]; if(!b) return;
+    document.getElementById('beanName').value=b.name||'';
+    document.getElementById('beanOrigin').value=b.origin||'';
+    document.getElementById('beanVariety').value=b.variety||'';
+    document.getElementById('beanProcess').value=b.process||'';
+    document.getElementById('beanRoast').value=b.roast||'';
+    document.getElementById('beanRoastDate').value=b.roastDate||'';
+  };
+  window.saveBean=function(){
+    var name=document.getElementById('beanName').value.trim();
+    if(!name){ alert('豆の名前を入力してください'); return; }
+    BL.DB.addBean({
+      name:name,
+      origin:document.getElementById('beanOrigin').value,
+      variety:document.getElementById('beanVariety').value,
+      process:document.getElementById('beanProcess').value,
+      roast:document.getElementById('beanRoast').value,
+      roastDate:document.getElementById('beanRoastDate').value
+    });
+    alert('豆を保存しました');
+    refreshBeanList();
+  };
+
+  function collectEntry(){
+    return {
+      beanName:document.getElementById('beanName').value.trim(),
+      origin:document.getElementById('beanOrigin').value,
+      variety:document.getElementById('beanVariety').value,
+      process:document.getElementById('beanProcess').value,
+      roast:document.getElementById('beanRoast').value,
+      roastDate:document.getElementById('beanRoastDate').value,
+      dripper:picks.dripper, filter:picks.filter,
+      grinder:picks.grinder, water:picks.water,
+      dose:+document.getElementById('p-dose').value,
+      waterAmt:+document.getElementById('p-water').value,
+      ratio:document.getElementById('p-ratio').value,
+      grind:picks.grind, grindMemo:document.getElementById('p-grindMemo').value.trim(),
+      temp:picks.temp, bloom:picks.bloom,
+      pourPattern:picks.pourpat, pourSpeed:picks.pourspeed,
+      totalTime:picks.totaltime,
+      acid:document.getElementById('t-acid').value,
+      sweet:document.getElementById('t-sweet').value,
+      bitter:document.getElementById('t-bitter').value,
+      body:document.getElementById('t-body').value,
+      after:document.getElementById('t-after').value,
+      overall:document.getElementById('t-overall').value,
+      notes:document.getElementById('t-notes').value.trim(),
+      diag:picks.diag
+    };
   }
-  // curve
-  let path='';
-  for(let t=minT;t<=maxT;t+=4){
-    const e=estExtraction(t);
-    path+=(t===minT?'M':'L')+` ${x(t)} ${y(e)}`;
-  }
-  s+=`<path d="${path}" fill="none" stroke="var(--ember)" stroke-width="2.5"/>`;
-  // current point
-  const ce=estExtraction(total);
-  const cx=x(Math.max(minT,Math.min(maxT,total))),cy=y(ce);
-  s+=`<line x1="${cx}" y1="${padT}" x2="${cx}" y2="${H-padB}" stroke="var(--ink)" stroke-dasharray="3 3" opacity="0.5"/>`;
-  s+=`<circle cx="${cx}" cy="${cy}" r="7" fill="var(--ink)"/>`;
-  s+=`<text x="${cx}" y="${cy-14}" font-size="12" fill="var(--ink)" text-anchor="middle" font-family="Helvetica Neue,sans-serif" font-weight="700">${fmt(total)} · ${ce.toFixed(1)}%</text>`;
-  $('curve').innerHTML=s;
-}
 
-function render(){
-  $('pourCountV').textContent=$('pourCount').value;
-  $('bloomTimeV').textContent=$('bloomTime').value;
-  $('intervalV').textContent=$('interval').value;
-  $('pourSpeedV').textContent=$('pourSpeed').value;
-
-  const sum=alloc.reduce((a,b)=>a+b,0);
-  const note=$('allocNote');
-  if(sum===100){note.className='alloc-note ok';note.textContent='配分合計 100% ✓ — Polaris上でこの%区切りを目標値に淹れられます。';}
-  else if(sum>100){note.className='alloc-note over';note.textContent=`配分合計 ${sum}% — 100%を超えています。どこかの投を削ってください。`;}
-  else{note.className='alloc-note';note.textContent=`配分合計 ${sum}% — あと ${100-sum}%。100%に揃えると総量＝レシオ通りになります。`;}
-
-  const T=timing();
-  drawTimeline(T);
-  drawCurve(T.total);
-  $('totalTime').textContent=fmt(T.total);
-  $('pourDone').textContent=fmt(T.pourEnd);
-  $('estExt').textContent=estExtraction(T.total).toFixed(1);
-}
-
-$('pourCount').addEventListener('input',()=>{alloc=defaultAlloc(+$('pourCount').value);buildPourRows();render();});
-['bloomTime','interval','pourSpeed'].forEach(id=>$(id).addEventListener('input',render));
-
-// diagnosis
-$('diagBtn').addEventListener('click',()=>{
-  const f=$('tFirst').value,a=$('tAcid').value,sw=$('tSweet').value,b=$('tBitter').value;
-  if(!f&&!a&&!sw&&!b){alert('味の項目を1つ以上選んでください');return;}
-  const under = (f==='thin')+(a==='sharp')+(a==='flat'?0:0)+(sw==='short')+(b==='none');
-  const over  = (f==='heavy')+(b==='harsh')+(sw==='dry')+(a==='flat');
-  const d=$('diag'),tag=$('diagTag'),tt=$('diagTitle'),bd=$('diagBody'),fx=$('diagFix');
-  d.className='diag show';
-  if(over>under && over>0){
-    tag.textContent='OVER-EXTRACTED';tag.style.background='#f3d8cc';tag.style.color='var(--ember-deep)';
-    d.style.borderColor='var(--ember)';
-    tt.textContent='過抽出側：時間を取りすぎている可能性';
-    bd.textContent='渋み・エグ味・乾く余韻は、総抽出時間が長く後半まで成分を引き出しすぎたサイン。落ち切りが遅い、投間インターバルが長い、最後の投が大きすぎる、などが効いています。';
-    fx.textContent='対策：総抽出時間を15〜30s短縮 → インターバルを詰めるか、後半の投の%を下げて前半寄りに再配分。';
-  }else if(under>0){
-    tag.textContent='UNDER-EXTRACTED';tag.style.background='#dbe6ef';tag.style.color='var(--water)';
-    d.style.borderColor='var(--water)';
-    tt.textContent='未抽出側：時間・接触が足りない可能性';
-    bd.textContent='薄さ・尖った酸・短い余韻は、総抽出時間が短く成分を出し切れていないサイン。蒸らし不足、注湯が速すぎる、ドローダウンが早い、などが効いています。';
-    fx.textContent='対策：総抽出時間を15〜30s延長 → 蒸らしを延ばすか、投を細かく分けてインターバルを取り、接触時間を増やす。';
-  }else{
-    tag.textContent='IN BALANCE';tag.style.background='#dde6da';tag.style.color='var(--leaf)';
-    d.style.borderColor='var(--leaf)';
-    tt.textContent='バランス領域：この設計を基準値に';
-    bd.textContent='明るい酸・甘い余韻・心地よい苦味が揃うなら、いまの総抽出時間と注湯配分がこの豆の核。Notionに基準レシピとして記録し、次は1変数だけ動かして比較を。';
-    fx.textContent='次の一手：総抽出時間を±20sだけ振って、味の振れ幅を体で覚える。';
-  }
-});
-
-$('sendBtn').addEventListener('click',()=>{
-  const T=timing();
-  const lines=alloc.map((v,i)=>`${i===0?'蒸らし':'第'+(i+1)+'投'} ${v}%`).join(' / ');
-  const msg=`【Ch.3 振り返り】
-注湯回数：${alloc.length}投
-配分：${lines}（合計${alloc.reduce((a,b)=>a+b,0)}%）
-蒸らし：${$('bloomTime').value}s ／ インターバル：${$('interval').value}s ／ 注湯速度：${$('pourSpeed').value}g/s
-推定総抽出時間：${fmt(T.total)}（注湯完了 ${fmt(T.pourEnd)}）
-推定抽出率：${estExtraction(T.total).toFixed(1)}%
-味評価：第一印象=${$('tFirst').value||'-'} / 酸=${$('tAcid').value||'-'} / 甘み余韻=${$('tSweet').value||'-'} / 苦味=${$('tBitter').value||'-'}
-メモ：${$('tNote').value||'-'}
-
-この設計と味の関係を診断して、次に動かす1変数を提案してください。`;
-  if(window.sendPrompt){window.sendPrompt(msg);}
-  else{navigator.clipboard.writeText(msg).then(()=>alert('振り返りをコピーしました。チャットに貼り付けてください。'),()=>alert(msg));}
-});
-
-buildPourRows();
-render();
+  window.saveBrew=function(){
+    var e=collectEntry();
+    if(!e.beanName){ alert('豆の名前を入力してください'); return; }
+    BL.DB.addBrew(e);
+    document.getElementById('saveMsg').textContent='✓ 記録に保存しました（'+BL.fmtDate(Date.now())+'）';
+    setTimeout(function(){document.getElementById('saveMsg').textContent='';},4000);
+  };
+  window.saveAsRecipe=function(){
+    var e=collectEntry();
+    if(!e.beanName){ alert('豆の名前を入力してください'); return; }
+    var name=prompt('レシピ名を入力（例: イルガチェフェ ベスト#1）');
+    if(!name) return;
+    e.recipeName=name;
+    BL.DB.addRecipe(e);
+    document.getElementById('saveMsg').textContent='⭐ マイレシピに保存しました。「マイレシピ」ページからJPEGカード化できます。';
+    setTimeout(function(){document.getElementById('saveMsg').textContent='';},5000);
+  };
+  window.resetForm=function(){
+    if(!confirm('入力内容をリセットしますか？')) return;
+    document.getElementById('beanSelect').value='';
+    ['beanName','p-grindMemo','t-notes','beanRoastDate'].forEach(function(id){document.getElementById(id).value='';});
+    ['beanOrigin','beanVariety','beanProcess','beanRoast'].forEach(function(id){document.getElementById(id).value='';});
+    document.getElementById('p-dose').value=15; document.getElementById('p-water').value=240;
+    ['t-acid','t-sweet','t-bitter','t-body','t-after','t-overall'].forEach(function(id){document.getElementById(id).value='3';});
+    Object.keys(picks).forEach(function(k){picks[k]='';});
+    picks.temp='92℃'; picks.bloom='30秒'; picks.totaltime='2:30';
+    updateRatio();
+    // re-render chip groups
+    makeChipGroup('ch-dripper',C.drippers,'dripper',true);
+    makeChipGroup('ch-filter',C.filters,'filter',true);
+    makeChipGroup('ch-grinder',C.grinders,'grinder',true);
+    makeChipGroup('ch-water',C.waterTypes,'water',true);
+    makeChipGroup('ch-grind',C.grindLevels,'grind',false);
+    makeChipGroup('ch-temp',C.temps,'temp',false);
+    makeChipGroup('ch-bloom',C.bloomTimes,'bloom',false);
+    makeChipGroup('ch-pourpat',C.pourPatterns,'pourpat',true);
+    makeChipGroup('ch-pourspeed',C.pourSpeed,'pourspeed',true);
+    makeChipGroup('ch-totaltime',C.totalTimes,'totaltime',false);
+    makeChipGroup('ch-diag',['未抽出ぎみ','やや未抽出','ちょうど良い','やや過抽出','過抽出ぎみ','判断中'],'diag',false);
+  };
+  window.generatePrompt=function(){
+    var e=collectEntry();
+    var labels={
+      beanName:'豆', origin:'産地', variety:'品種', process:'精製', roast:'焙煎度', roastDate:'焙煎日',
+      dripper:'ドリッパー', filter:'フィルター', grinder:'グラインダー', water:'水',
+      dose:'粉量(g)', waterAmt:'湯量(g)', ratio:'レシオ',
+      grind:'挽き目', grindMemo:'挽き目メモ', temp:'湯温', bloom:'蒸らし時間',
+      pourPattern:'注湯パターン', pourSpeed:'注ぎ方', totalTime:'総抽出時間',
+      acid:'酸質(1-5)', sweet:'甘さ(1-5)', bitter:'苦味(1-5)', body:'ボディ(1-5)',
+      after:'余韻(1-5)', overall:'総合(1-5)', notes:'フレーバーメモ', diag:'自己診断'
+    };
+    var entry={};
+    Object.keys(labels).forEach(function(k){
+      if(e[k]!=null && e[k]!=='') entry[labels[k]]=e[k];
+    });
+    var prompt=BL.buildAdvisorPrompt(
+      'Chapter 3 (Recipe Lab)',
+      'あなたは Brewers Cup 競技経験者のハンドドリップ・コーチです。SCA Brewing Handbook と Scott Rao の抽出理論、粕谷哲の 4:6 メソッドを主な拠り所にし、日本のスペシャルティ文脈に詳しい立場で指導してください。',
+      entry
+    );
+    document.getElementById('promptArea').style.display='block';
+    document.getElementById('promptOutput').textContent=prompt;
+    document.getElementById('promptArea').scrollIntoView({behavior:'smooth'});
+  };
+  window.copyPrompt=function(){
+    BL.copyToClipboard(document.getElementById('promptOutput').textContent);
+    alert('プロンプトをコピーしました。新しいClaudeチャットに貼ってください。');
+  };
+})();
 </script>
 </body>
 </html>
