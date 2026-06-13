@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Brewers Lab Ch.2 — 挽き目</title>
+<style>
+  :root{
+    --bg:#1a1714;
+    --panel:#231f1ب;
+    --panel:#241f1a;
+    --panel2:#2c2620;
+    --line:#3a332b;
+    --ink:#efe7da;
+    --muted:#9b8f7d;
+    --acid:#c6e04a;       /* 酸 */
+    --sweet:#e8a24a;      /* 甘 */
+    --bitter:#a36b8f;     /* 苦 */
+    --hot:#d8512f;
+    --grain:#7a6a52;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;background:
+      radial-gradient(900px 500px at 80% -10%, #2b251e 0%, transparent 60%),
+      var(--bg);
+    color:var(--ink);
+    font-family:"Hiragino Kaku Gothic ProN","Yu Gothic",-apple-system,system-ui,sans-serif;
+    line-height:1.5;
+  }
+  .wrap{max-width:1080px;margin:0 auto;padding:28px 20px 80px}
+  header{border-bottom:1px solid var(--line);padding-bottom:18px;margin-bottom:26px}
+  .eyebrow{font-size:11px;letter-spacing:.32em;color:var(--grain);text-transform:uppercase}
+  h1{font-family:"Georgia",serif;font-weight:600;font-size:30px;margin:6px 0 4px;letter-spacing:.01em}
+  .sub{color:var(--muted);font-size:13px}
+  .grid{display:grid;grid-template-columns:300px 1fr;gap:22px}
+  @media(max-width:820px){.grid{grid-template-columns:1fr}}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px}
+  .panel h2{font-size:12px;letter-spacing:.18em;color:var(--grain);text-transform:uppercase;margin:0 0 14px;font-weight:700}
+
+  /* dial */
+  .dial-shell{display:flex;gap:18px;align-items:stretch}
+  .dial{position:relative;width:74px;flex:0 0 74px;background:linear-gradient(180deg,#2f2820,#211c16);
+    border:1px solid var(--line);border-radius:40px;padding:10px 0}
+  input[type=range]{
+    -webkit-appearance:none;appearance:none;width:230px;height:54px;background:transparent;
+    transform:rotate(-90deg);transform-origin:center;position:absolute;top:50%;left:50%;
+    margin-left:-115px;margin-top:-27px;cursor:pointer}
+  input[type=range]::-webkit-slider-runnable-track{height:6px;border-radius:6px;
+    background:linear-gradient(90deg,#5b4f3c,#cdbfa3)}
+  input[type=range]::-moz-range-track{height:6px;border-radius:6px;background:#5b4f3c}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:30px;height:30px;border-radius:50%;
+    background:radial-gradient(circle at 35% 30%,#f3ead8,#b39d78);border:2px solid #1a1714;margin-top:-12px;
+    box-shadow:0 2px 8px rgba(0,0,0,.5)}
+  input[type=range]::-moz-range-thumb{width:30px;height:30px;border-radius:50%;
+    background:#e7d9bd;border:2px solid #1a1714}
+  .scale{display:flex;flex-direction:column;justify-content:space-between;font-size:11px;color:var(--muted);
+    padding:4px 0}
+  .scale span.on{color:var(--ink);font-weight:700}
+  .readout{margin-top:6px}
+  .grindname{font-family:"Georgia",serif;font-size:26px;margin:2px 0}
+  .grindsub{font-size:12px;color:var(--muted);min-height:32px}
+
+  /* meters */
+  .meter{margin:12px 0}
+  .meter .lab{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-bottom:4px}
+  .meter .lab b{color:var(--ink);font-variant-numeric:tabular-nums}
+  .bar{height:9px;background:var(--panel2);border-radius:6px;overflow:hidden}
+  .bar i{display:block;height:100%;border-radius:6px;transition:width .25s ease,background .25s}
+
+  /* flow viz */
+  .flow{position:relative;height:60px;border-radius:10px;background:var(--panel2);overflow:hidden;margin-top:8px}
+  .drop{position:absolute;top:-8px;width:3px;border-radius:2px;background:#8fb4d4;opacity:.85}
+  .extract-pill{display:inline-block;background:var(--panel2);border:1px solid var(--line);
+    border-radius:20px;padding:6px 14px;font-size:13px;margin-top:8px}
+  .extract-pill b{font-size:18px;font-family:"Georgia",serif}
+
+  /* steps */
+  .steps{display:flex;gap:6px;margin-bottom:18px;flex-wrap:wrap}
+  .step{flex:1;min-width:120px;border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:var(--panel)}
+  .step.active{border-color:var(--grain);background:var(--panel2)}
+  .step .n{font-size:11px;color:var(--grain);letter-spacing:.1em}
+  .step .t{font-size:13px;margin-top:2px}
+
+  label.fld{display:block;font-size:12px;color:var(--muted);margin:12px 0 5px}
+  input.txt,textarea,select{width:100%;background:var(--panel2);border:1px solid var(--line);
+    border-radius:8px;color:var(--ink);padding:9px 11px;font-family:inherit;font-size:13px}
+  textarea{min-height:58px;resize:vertical}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  button{font-family:inherit;cursor:pointer;border-radius:8px;border:1px solid var(--line);
+    background:var(--panel2);color:var(--ink);padding:9px 14px;font-size:13px;transition:.15s}
+  button:hover{border-color:var(--grain)}
+  button.primary{background:var(--hot);border-color:var(--hot);color:#fff;font-weight:600}
+  button.primary:hover{filter:brightness(1.08)}
+  .actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+
+  table{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:6px}
+  th,td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+  th{color:var(--grain);font-weight:600;letter-spacing:.04em}
+  .tag{display:inline-block;font-size:11px;padding:1px 7px;border-radius:10px;border:1px solid var(--line)}
+  .empty{color:var(--muted);font-size:13px;padding:14px 4px}
+
+  /* compare */
+  .cmp{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:560px){.cmp{grid-template-columns:1fr}.row2{grid-template-columns:1fr}}
+  .cmpcard{border:1px solid var(--line);border-radius:10px;padding:12px}
+  .cmpcard h3{margin:0 0 8px;font-size:13px}
+  .legend{font-size:11px;color:var(--muted);display:flex;gap:14px;flex-wrap:wrap;margin-top:8px}
+  .legend i{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px;vertical-align:middle}
+  .hint{font-size:12px;color:var(--muted);margin-top:10px;border-left:2px solid var(--grain);padding-left:10px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Brewers Lab · Chapter 02</div>
+    <h1>挽き目 — 主要変数の徹底理解</h1>
+    <div class="sub">ダイヤルを回す → 味の傾向を予測する → 淹れる → 結果を記録する。1段の差を言語化する練習。</div>
+  </header>
+
+  <!-- STEPS -->
+  <div class="steps" id="steps">
+    <div class="step active" data-s="0"><div class="n">STEP 1</div><div class="t">仮説を立てる</div></div>
+    <div class="step" data-s="1"><div class="n">STEP 2</div><div class="t">淹れる</div></div>
+    <div class="step" data-s="2"><div class="n">STEP 3</div><div class="t">記録する</div></div>
+    <div class="step" data-s="3"><div class="n">STEP 4</div><div class="t">次の実験へ</div></div>
+  </div>
+
+  <div class="grid">
+    <!-- LEFT: DIAL -->
+    <div class="panel">
+      <h2>挽き目ダイヤル</h2>
+      <div class="dial-shell">
+        <div class="dial"><input id="grind" type="range" min="0" max="8" value="4" step="1"></div>
+        <div class="scale" id="scale"></div>
+      </div>
+      <div class="readout">
+        <div class="grindname" id="gname">中細挽き</div>
+        <div class="grindsub" id="gsub"></div>
+        <span class="extract-pill">推定抽出率 <b id="extract">19.5</b>%</span>
+      </div>
+
+      <div class="meter">
+        <div class="lab"><span>フロースピード感</span><b id="flowtxt">標準</b></div>
+        <div class="flow" id="flow"></div>
+      </div>
+
+      <div class="meter">
+        <div class="lab"><span style="color:var(--acid)">酸質</span><b id="acidv">—</b></div>
+        <div class="bar"><i id="acidbar" style="background:var(--acid)"></i></div>
+      </div>
+      <div class="meter">
+        <div class="lab"><span style="color:var(--sweet)">甘さ</span><b id="sweetv">—</b></div>
+        <div class="bar"><i id="sweetbar" style="background:var(--sweet)"></i></div>
+      </div>
+      <div class="meter">
+        <div class="lab"><span style="color:var(--bitter)">苦味</span><b id="bitterv">—</b></div>
+        <div class="bar"><i id="bitterbar" style="background:var(--bitter)"></i></div>
+      </div>
+      <div class="hint" id="dialhint"></div>
+    </div>
+
+    <!-- RIGHT: WORKFLOW -->
+    <div>
+      <!-- PREDICT VS RESULT -->
+      <div class="panel" style="margin-bottom:18px">
+        <h2>予測 vs 結果</h2>
+        <div class="row2">
+          <div>
+            <label class="fld">豆 / メモ</label>
+            <input class="txt" id="bean" placeholder="例: エチオピア ウォッシュド">
+          </div>
+          <div>
+            <label class="fld">挽き目（上のダイヤルから自動）</label>
+            <input class="txt" id="grindlock" readonly>
+          </div>
+        </div>
+        <label class="fld">① 予測：この挽き目でどんな味になりそう？</label>
+        <textarea id="predict" placeholder="例: 酸が立って、甘さは中くらい、苦味はほぼ無し。フローは速め。"></textarea>
+        <label class="fld">② 結果：実際に淹れてどうだった？</label>
+        <textarea id="result" placeholder="例: 思ったより薄かった。酸はあるが water down。→ 1段細かくしたい。"></textarea>
+        <div class="row2">
+          <div>
+            <label class="fld">総抽出時間</label>
+            <input class="txt" id="time" placeholder="例: 2:45">
+          </div>
+          <div>
+            <label class="fld">自己診断</label>
+            <select id="diag">
+              <option value="">—</option>
+              <option>未抽出寄り</option>
+              <option>ちょうど良い</option>
+              <option>過抽出寄り</option>
+            </select>
+          </div>
+        </div>
+        <div class="actions">
+          <button class="primary" id="save">記録を保存</button>
+          <button id="clear">入力をクリア</button>
+        </div>
+      </div>
+
+      <!-- LOG -->
+      <div class="panel" style="margin-bottom:18px">
+        <h2>実験ログ</h2>
+        <table id="logtbl"><thead><tr>
+          <th>豆</th><th>挽き目</th><th>時間</th><th>診断</th><th>予測→結果</th><th></th>
+        </tr></thead><tbody id="logbody"></tbody></table>
+        <div class="empty" id="logempty">まだ記録がありません。上で1杯目を保存してみましょう。</div>
+      </div>
+
+      <!-- COMPARE -->
+      <div class="panel">
+        <h2>A vs B 2杯比較</h2>
+        <div class="cmp">
+          <div class="cmpcard">
+            <h3>カップ A</h3>
+            <select id="selA"></select>
+          </div>
+          <div class="cmpcard">
+            <h3>カップ B</h3>
+            <select id="selB"></select>
+          </div>
+        </div>
+        <canvas id="radar" width="520" height="300" style="width:100%;margin-top:14px"></canvas>
+        <div class="legend">
+          <span><i style="background:var(--hot)"></i>カップ A</span>
+          <span><i style="background:#5fa8d3"></i>カップ B</span>
+        </div>
+        <div class="actions">
+          <button class="primary" id="send">Claudeに振り返りを送る</button>
+        </div>
+        <div class="hint" id="sendhint" style="display:none"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ---- grind model (9 steps, coarse→fine) ----
+const NAMES=["極粗","粗挽き","中粗","やや中粗","中細挽き","やや細","細挽き","極細寄り","極細"];
+const SUBS=[
+ "コールドブリュー〜フレンチプレス域。接触時間が長い抽出向け。",
+ "クレバードリッパーや浸漬寄り。",
+ "粗めのドリップ。水が抜けやすい。",
+ "ドリップの粗い側。フローは速め。",
+ "ペーパードリップの基準ゾーン。バランスの起点。",
+ "やや詰まり始める。接触が増える。",
+ "エアロプレス〜エスプレッソ手前。流速が落ちる。",
+ "かなり詰まる。過抽出リスク上昇。",
+ "エスプレッソ域。微粉多く水が抜けにくい。"
+];
+// per-step taste profiles 0-100 [酸, 甘, 苦] + extract% + flow(0 fast..100 slow)
+const P=[
+ {a:88,s:30,b:8, e:16.0, f:8 },
+ {a:84,s:42,b:12,e:17.2, f:18},
+ {a:78,s:55,b:18,e:18.2, f:30},
+ {a:70,s:64,b:24,e:18.9, f:42},
+ {a:60,s:72,b:32,e:19.6, f:52},
+ {a:50,s:74,b:42,e:20.4, f:64},
+ {a:40,s:66,b:55,e:21.4, f:75},
+ {a:30,s:52,b:70,e:22.6, f:86},
+ {a:22,s:40,b:82,e:23.8, f:94}
+];
+const HINTS=[
+ "粗いほど水が速く抜け、接触時間が短い→未抽出（酸・塩味・薄さ）に寄りやすい。仮説：時間で補えるか？",
+ "粗め。甘さが乗り切る前に抜けることが多い。総抽出時間を延ばす余地は？",
+ "ここから甘さが出始める帯。1段の差が分かりやすい比較ポイント。",
+ "基準の手前。フローが速いと感じたら1段細かくが定石。",
+ "多くのレシピの出発点。ここを基準に上下1段ずつ振ると差が掴める。",
+ "甘さのピーク帯。苦味が顔を出し始める境目。",
+ "流速低下で接触時間が伸びる。過抽出（渋み・ドライ）に注意。",
+ "詰まりやすい。同じ時間でも抽出が進みやすい＝過抽出寄り。",
+ "ドリップでは過抽出になりやすい領域。エスプレッソ前提向き。"
+];
+
+const $=id=>document.getElementById(id);
+const slider=$("grind");
+let log=[]; // in-memory only
+
+function paintScale(v){
+  const labels=["粗","","","","中","","","","極細"];
+  $("scale").innerHTML=labels.map((t,i)=>
+    `<span class="${i==v?'on':''}">${t||'·'}</span>`).join("");
+}
+let dropTimer=null;
+function paintFlow(f){
+  const flow=$("flow"); flow.innerHTML="";
+  const n=Math.round(5+f/12);
+  const dur=(1.6 - f/100*1.1); // faster fall when coarse
+  for(let i=0;i<n;i++){
+    const d=document.createElement("div");
+    d.className="drop";
+    d.style.left=(8+Math.random()*84)+"%";
+    d.style.height=(6+Math.random()*10)+"px";
+    d.style.animation=`fall ${dur}s linear ${Math.random()*dur}s infinite`;
+    flow.appendChild(d);
+  }
+}
+const style=document.createElement("style");
+style.textContent="@keyframes fall{to{transform:translateY(70px);opacity:0}}";
+document.head.appendChild(style);
+
+function flowWord(f){return f<25?"速い（さらっと抜ける）":f<50?"やや速い":f<70?"標準":f<85?"やや遅い":"遅い（詰まり気味）";}
+
+function render(){
+  const v=+slider.value, p=P[v];
+  $("gname").textContent=NAMES[v];
+  $("gsub").textContent=SUBS[v];
+  $("extract").textContent=p.e.toFixed(1);
+  $("acidbar").style.width=p.a+"%"; $("acidv").textContent=p.a;
+  $("sweetbar").style.width=p.s+"%"; $("sweetv").textContent=p.s;
+  $("bitterbar").style.width=p.b+"%"; $("bitterv").textContent=p.b;
+  $("flowtxt").textContent=flowWord(p.f);
+  $("dialhint").textContent=HINTS[v];
+  $("grindlock").value=NAMES[v]+"（段 "+(v+1)+"/9）";
+  paintScale(v); paintFlow(p.f);
+}
+slider.addEventListener("input",render);
+
+// ---- log ----
+function diagTag(d){
+  const c={"未抽出寄り":"var(--acid)","ちょうど良い":"var(--sweet)","過抽出寄り":"var(--bitter)"}[d]||"var(--line)";
+  return d?`<span class="tag" style="border-color:${c};color:${c}">${d}</span>`:"—";
+}
+function refreshLog(){
+  const b=$("logbody");
+  $("logempty").style.display=log.length?"none":"block";
+  b.innerHTML=log.map((r,i)=>`<tr>
+    <td>${r.bean||"—"}</td><td>${r.grindName}</td><td>${r.time||"—"}</td>
+    <td>${diagTag(r.diag)}</td>
+    <td><div style="color:var(--muted)">${r.predict||"—"}</div>
+        <div style="margin-top:3px">↳ ${r.result||"—"}</div></td>
+    <td><button data-del="${i}">削除</button></td></tr>`).join("");
+  b.querySelectorAll("[data-del]").forEach(btn=>btn.onclick=()=>{
+    log.splice(+btn.dataset.del,1);refreshLog();fillSelects();drawRadar();});
+  fillSelects();
+}
+$("save").onclick=()=>{
+  const v=+slider.value,p=P[v];
+  log.push({bean:$("bean").value.trim(),grindIdx:v,grindName:NAMES[v]+"("+(v+1)+")",
+    time:$("time").value.trim(),diag:$("diag").value,
+    predict:$("predict").value.trim(),result:$("result").value.trim(),p:p});
+  refreshLog(); drawRadar();
+  ["predict","result","time"].forEach(id=>$(id).value="");
+  $("diag").value="";
+  setStep(2);
+};
+$("clear").onclick=()=>{["bean","predict","result","time"].forEach(id=>$(id).value="");$("diag").value="";};
+
+// ---- steps highlight ----
+function setStep(n){document.querySelectorAll(".step").forEach(s=>
+  s.classList.toggle("active",+s.dataset.s===n));}
+document.querySelectorAll(".step").forEach(s=>s.onclick=()=>setStep(+s.dataset.s));
+
+// ---- compare selects + radar ----
+function fillSelects(){
+  ["selA","selB"].forEach(id=>{
+    const sel=$(id),cur=sel.value;
+    sel.innerHTML='<option value="">—</option>'+log.map((r,i)=>
+      `<option value="${i}">${r.bean||"杯"} / ${r.grindName}</option>`).join("");
+    sel.value=cur;
+  });
+}
+["selA","selB"].forEach(id=>{const e=$(id);if(e)e.onchange=drawRadar;});
+
+function drawRadar(){
+  const cv=$("radar"),ctx=cv.getContext("2d");
+  const W=cv.width,H=cv.height,cx=W/2,cy=H/2+6,R=110;
+  ctx.clearRect(0,0,W,H);
+  const axes=["酸質","甘さ","苦味"];
+  // grid
+  ctx.strokeStyle="#3a332b";ctx.fillStyle="#9b8f7d";ctx.font="13px sans-serif";ctx.textAlign="center";
+  for(let ring=1;ring<=4;ring++){
+    ctx.beginPath();
+    for(let i=0;i<=3;i++){const ang=-Math.PI/2+i*2*Math.PI/3;
+      const x=cx+Math.cos(ang)*R*ring/4,y=cy+Math.sin(ang)*R*ring/4;
+      i?ctx.lineTo(x,y):ctx.moveTo(x,y);}
+    ctx.closePath();ctx.stroke();
+  }
+  axes.forEach((t,i)=>{const ang=-Math.PI/2+i*2*Math.PI/3;
+    const x=cx+Math.cos(ang)*(R+24),y=cy+Math.sin(ang)*(R+24)+4;ctx.fillText(t,x,y);});
+  function poly(idx,color){
+    if(idx==="")return;const p=log[+idx].p,vals=[p.a,p.s,p.b];
+    ctx.beginPath();
+    vals.forEach((val,i)=>{const ang=-Math.PI/2+i*2*Math.PI/3;
+      const x=cx+Math.cos(ang)*R*val/100,y=cy+Math.sin(ang)*R*val/100;
+      i?ctx.lineTo(x,y):ctx.moveTo(x,y);});
+    ctx.closePath();
+    ctx.fillStyle=color+"33";ctx.strokeStyle=color;ctx.lineWidth=2;ctx.fill();ctx.stroke();
+  }
+  poly($("selA").value,"#d8512f");
+  poly($("selB").value,"#5fa8d3");
+}
+
+// ---- send to Claude ----
+$("send").onclick=()=>{
+  if(!log.length){$("sendhint").style.display="block";
+    $("sendhint").textContent="まず1杯記録してから送ってください。";return;}
+  const lines=log.map((r,i)=>`${i+1}. ${r.bean||"豆"} / ${r.grindName} / ${r.time||"時間?"} / 診断:${r.diag||"-"}
+   予測: ${r.predict||"-"}
+   結果: ${r.result||"-"}`).join("\n");
+  const a=$("selA").value,b=$("selB").value;
+  const cmp=(a!==""&&b!==""&&a!==b)?`\n比較中: A=${log[+a].grindName} vs B=${log[+b].grindName}`:"";
+  const msg=`【Ch.2 挽き目 振り返り】\n${lines}${cmp}\n\nこのログから、挽き目1段の差をどう言語化できる？次に振るべき1変数は？`;
+  if(typeof sendPrompt==="function"){sendPrompt(msg);}
+  else{$("sendhint").style.display="block";$("sendhint").textContent="（このプレビューでは送信先がありません。チャットUIで動作します。）";}
+};
+
+render(); refreshLog(); drawRadar();
+</script>
+</body>
+</html>
