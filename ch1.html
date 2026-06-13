@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Brewers Lab — Ch.1 濃度と抽出率</title>
+<style>
+  :root {
+    --ink: #1a1410;
+    --paper: #f5efe4;
+    --paper-2: #ece3d3;
+    --line: #c9bca3;
+    --under: #5b8aa6;   /* under-extracted: cool blue */
+    --good: #c08a3e;    /* golden cup: brass */
+    --over: #9a3b2e;    /* over-extracted: burnt red */
+    --muted: #7a6e5c;
+    --accent: #c08a3e;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: "Hiragino Kaku Gothic ProN", "Yu Gothic", "Segoe UI", system-ui, sans-serif;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 28px 20px 60px; }
+  header { border-bottom: 2px solid var(--ink); padding-bottom: 14px; margin-bottom: 24px; }
+  .eyebrow { font-size: 11px; letter-spacing: .28em; text-transform: uppercase; color: var(--muted); margin: 0 0 6px; }
+  h1 { font-size: 26px; margin: 0; letter-spacing: .02em; font-weight: 700; }
+  h1 .sub { display:block; font-size: 13px; font-weight: 400; color: var(--muted); margin-top:6px; letter-spacing:.04em;}
+  .panel { background: var(--paper-2); border: 1px solid var(--line); border-radius: 4px; padding: 18px 18px 20px; margin-bottom: 18px; }
+  .panel h2 { font-size: 13px; letter-spacing: .14em; text-transform: uppercase; margin: 0 0 14px; color: var(--muted); font-weight:700;}
+  .ctrl { margin-bottom: 16px; }
+  .ctrl:last-child { margin-bottom: 0; }
+  .ctrl label { display:flex; justify-content: space-between; align-items: baseline; font-size: 13px; margin-bottom: 6px; }
+  .ctrl label b { font-size: 15px; font-variant-numeric: tabular-nums; }
+  input[type=range] { width: 100%; accent-color: var(--accent); height: 24px; }
+  .readouts { display:grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin-top: 4px;}
+  .ro { background: var(--paper); border:1px solid var(--line); border-radius:4px; padding:10px 12px; text-align:center;}
+  .ro .k { font-size: 10px; letter-spacing:.12em; text-transform:uppercase; color:var(--muted);}
+  .ro .v { font-size: 22px; font-weight:700; font-variant-numeric: tabular-nums; margin-top:2px;}
+  .ro .u { font-size: 11px; color: var(--muted); }
+  /* extraction zone bar */
+  .zonebar { position:relative; height: 30px; border-radius:4px; overflow:hidden; margin-top:10px;
+    background: linear-gradient(90deg,
+      var(--under) 0%, var(--under) 35%,
+      var(--good) 42%, var(--good) 58%,
+      var(--over) 65%, var(--over) 100%); }
+  .zonebar .marker { position:absolute; top:-4px; bottom:-4px; width:3px; background:var(--ink);
+    box-shadow:0 0 0 2px var(--paper); transition: left .15s ease; }
+  .zonelabels { display:flex; justify-content:space-between; font-size:10px; color:var(--muted); margin-top:4px; letter-spacing:.08em;}
+  /* map */
+  .mapwrap { position:relative; }
+  svg { width:100%; height:auto; display:block; }
+  .verdict { font-size:15px; font-weight:700; margin-top:12px; padding:10px 12px; border-radius:4px; border:1px solid var(--line); background:var(--paper);}
+  .verdict.u { color:var(--under); }
+  .verdict.g { color:var(--good); }
+  .verdict.o { color:var(--over); }
+  .btnrow { display:flex; flex-wrap:wrap; gap:8px; margin-top:6px; }
+  button { font-family:inherit; cursor:pointer; border:1px solid var(--ink); background:var(--paper);
+    color:var(--ink); padding:9px 14px; border-radius:4px; font-size:13px; font-weight:600; transition:.12s; }
+  button:hover { background:var(--ink); color:var(--paper); }
+  button.primary { background:var(--ink); color:var(--paper); }
+  button.primary:hover { background:var(--accent); border-color:var(--accent); }
+  button:focus-visible { outline:3px solid var(--accent); outline-offset:2px; }
+  .cups { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:12px; }
+  .cup { border:1px dashed var(--line); border-radius:4px; padding:12px; min-height:96px; font-size:12px; }
+  .cup h3 { margin:0 0 8px; font-size:12px; letter-spacing:.1em; text-transform:uppercase; }
+  .cup.empty { color:var(--muted); display:flex; align-items:center; justify-content:center; font-style:italic; }
+  .cup .row { display:flex; justify-content:space-between; font-variant-numeric:tabular-nums; padding:2px 0; border-bottom:1px dotted var(--line);}
+  .cup .row:last-child{border-bottom:none;}
+  .diag { margin-top:12px; font-size:13px; }
+  .diag ul { margin:8px 0 0; padding-left:18px;}
+  .diag li { margin-bottom:5px; }
+  .sendbox { margin-top:14px; }
+  textarea { width:100%; min-height:70px; font-family:inherit; font-size:12px; border:1px solid var(--line);
+    border-radius:4px; padding:8px; background:var(--paper); color:var(--ink); resize:vertical;}
+  .hint { font-size:11px; color:var(--muted); margin-top:8px; }
+  .note { font-size:11px; color:var(--muted); font-style:italic; }
+  @media (max-width:520px){ .readouts{grid-template-columns:1fr 1fr;} .cups{grid-template-columns:1fr;} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <p class="eyebrow">Brewers Lab · Chapter 1</p>
+    <h1>濃度と抽出率は、別の話<span class="sub">Concentration ≠ Extraction — 変数を1つだけ動かして体感する</span></h1>
+  </header>
+
+  <!-- CONTROLS -->
+  <section class="panel">
+    <h2>① 操作する</h2>
+    <div class="ctrl">
+      <label>粉量 <b><span id="doseV">15.0</span> g</b></label>
+      <input type="range" id="dose" min="10" max="30" step="0.5" value="15">
+    </div>
+    <div class="ctrl">
+      <label>湯量 <b><span id="waterV">250</span> g</b></label>
+      <input type="range" id="water" min="150" max="500" step="5" value="250">
+    </div>
+    <div class="ctrl">
+      <label>挽き目（左＝細かい / 右＝粗い） <b id="grindV">中</b></label>
+      <input type="range" id="grind" min="0" max="100" step="1" value="50">
+      <div class="note" style="margin-top:4px;">※ 総抽出時間や撹拌でも抽出率は動く。ここでは「挽き目」を抽出率の代理変数として単純化（仮説モデル）。</div>
+    </div>
+  </section>
+
+  <!-- READOUTS -->
+  <section class="panel">
+    <h2>② 観察する</h2>
+    <div class="readouts">
+      <div class="ro"><div class="k">レシオ</div><div class="v">1:<span id="ratioV">16.7</span></div><div class="u">粉:湯</div></div>
+      <div class="ro"><div class="k">濃度 TDS目安</div><div class="v"><span id="tdsV">1.30</span></div><div class="u">% 推定</div></div>
+      <div class="ro"><div class="k">抽出率</div><div class="v"><span id="extV">20.0</span></div><div class="u">% 推定</div></div>
+    </div>
+    <div class="zonebar"><div class="marker" id="zmark" style="left:50%"></div></div>
+    <div class="zonelabels"><span>未抽出</span><span>適正 18–22%</span><span>過抽出</span></div>
+  </section>
+
+  <!-- MAP -->
+  <section class="panel">
+    <h2>③ コーヒー抽出コントロールチャート</h2>
+    <div class="mapwrap">
+      <svg id="map" viewBox="0 0 460 320" role="img" aria-label="抽出率×濃度マップ">
+        <!-- plotting area: x = extraction 14-26%, y = TDS 0.9-1.7% -->
+        <!-- golden cup box -->
+        <rect id="goldbox" fill="#c08a3e" fill-opacity="0.18" stroke="#c08a3e" stroke-width="1.5"/>
+        <!-- grid + axes -->
+        <g id="grid" stroke="#c9bca3" stroke-width="1"></g>
+        <line id="xaxis" stroke="#1a1410" stroke-width="1.5"/>
+        <line id="yaxis" stroke="#1a1410" stroke-width="1.5"/>
+        <text x="230" y="312" text-anchor="middle" font-size="11" fill="#7a6e5c">抽出率 Extraction %  →</text>
+        <text x="14" y="160" text-anchor="middle" font-size="11" fill="#7a6e5c" transform="rotate(-90 14 160)">濃度 TDS %  →</text>
+        <text id="goldlabel" font-size="10" fill="#9a6b22" font-weight="700">ゴールデンカップ</text>
+        <!-- points -->
+        <g id="cupA"></g>
+        <g id="cupB"></g>
+        <circle id="liveDot" r="7" fill="#1a1410" stroke="#f5efe4" stroke-width="2"/>
+      </svg>
+    </div>
+    <div class="verdict" id="verdict">—</div>
+  </section>
+
+  <!-- COMPARE -->
+  <section class="panel">
+    <h2>④ 2杯を比較する</h2>
+    <div class="btnrow">
+      <button onclick="record('A')">この設定を A杯として記録</button>
+      <button onclick="record('B')">この設定を B杯として記録</button>
+      <button onclick="clearCups()">クリア</button>
+    </div>
+    <div class="cups">
+      <div class="cup empty" id="cupAbox">A杯：未記録</div>
+      <div class="cup empty" id="cupBbox">B杯：未記録</div>
+    </div>
+    <p class="hint" id="compareHint">2杯記録すると、どの変数が動いたかを比較表示します。</p>
+  </section>
+
+  <!-- DIAGNOSE -->
+  <section class="panel">
+    <h2>⑤ 診断と次の実験</h2>
+    <div class="btnrow">
+      <button class="primary" onclick="diagnose()">診断する</button>
+    </div>
+    <div class="diag" id="diagOut"><span class="note">「診断する」を押すと、未抽出/過抽出の自己診断と次の一手を表示します。</span></div>
+
+    <div class="sendbox">
+      <textarea id="reflect" placeholder="振り返りメモ（任意）：どんな味だった？ 狙いは？"></textarea>
+      <div class="btnrow" style="margin-top:8px;">
+        <button class="primary" onclick="sendToClaude()">振り返りをClaudeに送る</button>
+      </div>
+      <p class="hint">※ ボタンを押すと現在の数値＋メモがチャットに送られ、フィードバックが返ります。</p>
+    </div>
+  </section>
+</div>
+
+<script>
+// ---------- model (hypothesis-level, not lab-measured) ----------
+// extraction% estimated from grind (finer -> higher extraction)
+// grind slider 0(fine)..100(coarse) -> extraction ~26%..14%
+function extractionPct(grind){ return 26 - (grind/100)*12; } // 26..14
+// TDS estimated: solubles mass = dose*ext% ; TDS = solubles / (water + dose absorbed by grounds approx)
+function tdsPct(dose, water, ext){
+  const solubles = dose * (ext/100);
+  const retained = dose * 2.0; // grounds retain ~2x their weight in water
+  const beverage = Math.max(water - retained, water*0.6);
+  return (solubles / beverage) * 100;
+}
+function grindLabel(g){
+  if(g<20) return "極細"; if(g<40) return "細"; if(g<60) return "中";
+  if(g<80) return "粗"; return "極粗";
+}
+
+const $ = id => document.getElementById(id);
+let cups = {A:null, B:null};
+
+// map coordinate transforms
+const X0=40,X1=440,Y0=40,Y1=280;          // svg plot box
+const EXTmin=14,EXTmax=26, TDSmin=0.9,TDSmax=1.7;
+const sx = e => X0 + (e-EXTmin)/(EXTmax-EXTmin)*(X1-X0);
+const sy = t => Y1 - (t-TDSmin)/(TDSmax-TDSmin)*(Y1-Y0);
+
+function drawMapStatic(){
+  $("xaxis").setAttribute("x1",X0);$("xaxis").setAttribute("y1",Y1);
+  $("xaxis").setAttribute("x2",X1);$("xaxis").setAttribute("y2",Y1);
+  $("yaxis").setAttribute("x1",X0);$("yaxis").setAttribute("y1",Y0);
+  $("yaxis").setAttribute("x2",X0);$("yaxis").setAttribute("y2",Y1);
+  // golden box: ext 18-22, tds 1.15-1.45
+  const gx=sx(18),gw=sx(22)-sx(18),gy=sy(1.45),gh=sy(1.15)-sy(1.45);
+  const gb=$("goldbox");
+  gb.setAttribute("x",gx);gb.setAttribute("y",gy);gb.setAttribute("width",gw);gb.setAttribute("height",gh);
+  $("goldlabel").setAttribute("x",gx+4);$("goldlabel").setAttribute("y",gy-6);
+  // grid lines
+  const g=$("grid");g.innerHTML="";
+  for(let e=16;e<=24;e+=2){const x=sx(e);
+    g.innerHTML+=`<line x1="${x}" y1="${Y0}" x2="${x}" y2="${Y1}" stroke-opacity="0.4"/>`+
+    `<text x="${x}" y="${Y1+14}" text-anchor="middle" font-size="9" fill="#7a6e5c">${e}</text>`;}
+  for(let t=1.0;t<=1.6;t+=0.2){const y=sy(t);
+    g.innerHTML+=`<line x1="${X0}" y1="${y}" x2="${X1}" y2="${y}" stroke-opacity="0.4"/>`+
+    `<text x="${X0-6}" y="${y+3}" text-anchor="end" font-size="9" fill="#7a6e5c">${t.toFixed(1)}</text>`;}
+}
+
+function zoneOf(ext){ if(ext<18) return "u"; if(ext>22) return "o"; return "g"; }
+
+function update(){
+  const dose=+$("dose").value, water=+$("water").value, grind=+$("grind").value;
+  const ext=extractionPct(grind);
+  const tds=tdsPct(dose,water,ext);
+  const ratio=water/dose;
+  $("doseV").textContent=dose.toFixed(1);
+  $("waterV").textContent=water;
+  $("grindV").textContent=grindLabel(grind);
+  $("ratioV").textContent=ratio.toFixed(1);
+  $("tdsV").textContent=tds.toFixed(2);
+  $("extV").textContent=ext.toFixed(1);
+  // zone marker: map ext 14..26 to 0..100%
+  $("zmark").style.left = ((ext-14)/12*100).toFixed(1)+"%";
+  // live dot
+  const cx=Math.max(X0,Math.min(X1,sx(ext))), cy=Math.max(Y0,Math.min(Y1,sy(tds)));
+  $("liveDot").setAttribute("cx",cx);$("liveDot").setAttribute("cy",cy);
+  // verdict
+  const z=zoneOf(ext); const v=$("verdict");
+  const concWord = tds<1.15?"薄い":tds>1.45?"濃い":"適正レンジ";
+  v.className="verdict "+z;
+  const zw = z==="u"?"未抽出ぎみ":z==="o"?"過抽出ぎみ":"適正抽出";
+  v.textContent=`抽出：${zw}（${ext.toFixed(1)}%） / 濃度：${concWord}（TDS ${tds.toFixed(2)}%）`;
+  return {dose,water,grind,ext,tds,ratio};
+}
+
+function dotFor(g,id,color,label){
+  const s=update.last||update();
+}
+function plotCup(slot){
+  const c=cups[slot]; const g=$("cup"+slot); if(!c){g.innerHTML="";return;}
+  const x=sx(c.ext),y=sy(c.tds),col=slot==="A"?"#5b8aa6":"#9a3b2e";
+  g.innerHTML=`<circle cx="${x}" cy="${y}" r="6" fill="${col}" stroke="#f5efe4" stroke-width="2"/>`+
+  `<text x="${x+9}" y="${y+4}" font-size="11" font-weight="700" fill="${col}">${slot}</text>`;
+}
+
+function record(slot){
+  const s=update();
+  cups[slot]={...s};
+  const box=$("cup"+slot+"box");
+  box.className="cup";
+  box.innerHTML=`<h3>${slot}杯</h3>`+
+    `<div class="row"><span>レシオ</span><span>1:${s.ratio.toFixed(1)}</span></div>`+
+    `<div class="row"><span>TDS</span><span>${s.tds.toFixed(2)}%</span></div>`+
+    `<div class="row"><span>抽出率</span><span>${s.ext.toFixed(1)}%</span></div>`+
+    `<div class="row"><span>挽き目</span><span>${grindLabel(s.grind)}</span></div>`;
+  plotCup(slot);
+  compareCups();
+}
+function clearCups(){
+  cups={A:null,B:null};
+  ["A","B"].forEach(s=>{const b=$("cup"+s+"box");b.className="cup empty";b.textContent=s+"杯：未記録";$("cup"+s).innerHTML="";});
+  $("compareHint").textContent="2杯記録すると、どの変数が動いたかを比較表示します。";
+}
+function compareCups(){
+  if(!cups.A||!cups.B){$("compareHint").textContent="もう1杯記録すると比較できます。";return;}
+  const a=cups.A,b=cups.B; const diffs=[];
+  if(a.dose!==b.dose)diffs.push(`粉量 ${a.dose}→${b.dose}g`);
+  if(a.water!==b.water)diffs.push(`湯量 ${a.water}→${b.water}g`);
+  if(a.grind!==b.grind)diffs.push(`挽き目 ${grindLabel(a.grind)}→${grindLabel(b.grind)}`);
+  const dExt=(b.ext-a.ext).toFixed(1), dTds=(b.tds-a.tds).toFixed(2);
+  let msg=`変えた変数：${diffs.length?diffs.join(" / "):"なし（同条件）"}。 → 抽出率 ${dExt>0?"+":""}${dExt}% / TDS ${dTds>0?"+":""}${dTds}%。`;
+  if(diffs.length>1)msg+=" ⚠ 2つ以上動いています。原因を切り分けるなら一度に1変数だけ。";
+  $("compareHint").textContent=msg;
+}
+
+function diagnose(){
+  const s=update(); const z=zoneOf(s.ext);
+  let title,clue,next;
+  if(z==="u"){
+    title="🔵 未抽出ぎみ（抽出率 "+s.ext.toFixed(1)+"%）";
+    clue="酸が立ちすぎる・塩気・とがった印象・後味が短い・水っぽい甘さの欠如。";
+    next=["挽き目を1段細かく（抽出率↑を狙う）","総抽出時間を少し延ばす","湯温を上げる / 撹拌を1回足す","※ 変えるのは1つだけ。次をA杯と比較。"];
+  } else if(z==="o"){
+    title="🔴 過抽出ぎみ（抽出率 "+s.ext.toFixed(1)+"%）";
+    clue="苦味・渋み（収れん感）・ドライ/焦げ感・後味が重く濁る。";
+    next=["挽き目を1段粗く（抽出率↓を狙う）","総抽出時間を短く","湯温を下げる / 撹拌を減らす","※ 変えるのは1つだけ。次をA杯と比較。"];
+  } else {
+    title="🟡 抽出は適正レンジ（"+s.ext.toFixed(1)+"%）";
+    clue="甘さと酸のバランス、クリーンな後味が出やすい帯。";
+    const tw=s.tds<1.15?"やや薄い→濃度を上げたいなら粉量↑か湯量↓":s.tds>1.45?"やや濃い→濃度を下げたいなら湯量↑か粉量↓":"濃度も適正。基準のど真ん中。";
+    next=["濃度の微調整は『レシオ』で："+tw,"抽出率はそのままに、濃度だけ動かす実験を","気に入った点を言語化して記録"];
+  }
+  let html=`<div class="verdict ${z}" style="margin-top:0">${title}</div>`+
+    `<p style="margin:8px 0 4px"><b>この帯で出やすい味：</b>${clue}</p>`+
+    `<p style="margin:4px 0"><b>次の一手（仮説）：</b></p><ul>`+
+    next.map(n=>`<li>${n}</li>`).join("")+`</ul>`;
+  $("diagOut").innerHTML=html;
+}
+
+function sendToClaude(){
+  const s=update(); const z=zoneOf(s.ext);
+  const zw=z==="u"?"未抽出ぎみ":z==="o"?"過抽出ぎみ":"適正";
+  const memo=$("reflect").value.trim();
+  let txt=`【Ch.1 振り返り】\n`+
+    `粉量 ${s.dose}g / 湯量 ${s.water}g / レシオ 1:${s.ratio.toFixed(1)}\n`+
+    `挽き目 ${grindLabel(s.grind)} / 推定抽出率 ${s.ext.toFixed(1)}%（${zw}） / 推定TDS ${s.tds.toFixed(2)}%\n`;
+  if(cups.A&&cups.B){
+    txt+=`A杯: 抽出${cups.A.ext.toFixed(1)}% TDS${cups.A.tds.toFixed(2)}% / B杯: 抽出${cups.B.ext.toFixed(1)}% TDS${cups.B.tds.toFixed(2)}%\n`;
+  }
+  if(memo)txt+=`メモ：${memo}\n`;
+  txt+=`この結果について、未抽出/過抽出の見立てと次の実験提案をください。`;
+  if(window.sendPrompt){ sendPrompt(txt); }
+  else { navigator.clipboard?.writeText(txt); alert("チャットに送信できない環境のため、内容をコピーしました。貼り付けて送ってください。\n\n"+txt); }
+}
+
+["dose","water","grind"].forEach(id=>$(id).addEventListener("input",update));
+drawMapStatic();
+update();
+</script>
+</body>
+</html>
