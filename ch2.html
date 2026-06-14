@@ -5,6 +5,221 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Ch.2 味の言語化 — Brewers Lab</title>
 <link rel="stylesheet" href="style.css">
+<style>
+  /* === Ch.2 専用拡張スタイル === */
+
+  /* 軸ごとのカラーバンド */
+  .axis-card{background:var(--paper-2);border:1px solid var(--line);border-radius:var(--radius);
+    overflow:hidden;margin-bottom:14px}
+  .axis-head{padding:14px 18px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+  .axis-num{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+    color:#fff;font-weight:700;font-size:14px;flex-shrink:0}
+  .axis-num.acid{background:var(--acid)}
+  .axis-num.sweet{background:var(--sweet)}
+  .axis-num.bitter{background:var(--bitter)}
+  .axis-num.body{background:var(--body-c)}
+  .axis-num.after{background:var(--after)}
+  .axis-head h3{margin:0;font-size:17px}
+  .axis-head .qg{margin-left:auto;font-size:11px;padding:3px 9px;background:var(--ink);color:var(--paper);border-radius:10px;letter-spacing:.08em}
+  .axis-body{padding:16px 18px}
+
+  /* 2軸マッピング (強度 × 質) */
+  .map2d{position:relative;width:100%;max-width:520px;margin:8px auto 4px;aspect-ratio:1/1;
+    background:var(--paper);border:1px solid var(--line);border-radius:var(--radius)}
+  .map2d .axis-x,.map2d .axis-y{position:absolute;font-size:11px;color:var(--muted);letter-spacing:.04em}
+  .map2d .axis-x{bottom:-22px;width:100%;display:flex;justify-content:space-between;padding:0 8px}
+  .map2d .axis-y{left:-32px;height:100%;display:flex;flex-direction:column;justify-content:space-between;align-items:flex-end;padding:6px 0;writing-mode:vertical-rl;transform:rotate(180deg)}
+  .map2d .grid-x{position:absolute;left:0;right:0;border-top:1px dashed #d8cab0}
+  .map2d .grid-y{position:absolute;top:0;bottom:0;border-left:1px dashed #d8cab0}
+  .map2d .ax-label-x{position:absolute;bottom:-44px;text-align:center;width:100%;font-size:11px;color:var(--muted);font-weight:600;letter-spacing:.1em}
+  .map2d .ax-label-y{position:absolute;left:-56px;top:50%;transform:translateY(-50%) rotate(-90deg);font-size:11px;color:var(--muted);font-weight:600;letter-spacing:.1em;white-space:nowrap}
+  .map2d .pt{position:absolute;width:44px;height:44px;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    background:rgba(245,239,228,.95);border:2px solid var(--ink);font-size:10px;font-weight:700;text-align:center;line-height:1.1;
+    cursor:pointer;transition:.15s;color:var(--ink);padding:2px;transform:translate(-50%,-50%)}
+  .map2d .pt:hover{transform:translate(-50%,-50%) scale(1.15);z-index:10;box-shadow:0 4px 14px rgba(0,0,0,.2)}
+  .map2d .pt.sel{background:var(--accent);color:#fff;border-color:var(--accent-deep);box-shadow:0 0 0 4px rgba(192,138,62,.25)}
+  .map2d-wrap{padding:12px 60px 60px 60px}
+
+  /* ツールチップカード（モーダル風だがインライン展開） */
+  .ttcard{margin-top:14px;padding:14px 16px;background:var(--paper);border:1px solid var(--line);
+    border-left:3px solid var(--accent);border-radius:0 var(--radius-s) var(--radius-s) 0;display:none}
+  .ttcard.on{display:block}
+  .ttcard .ttname{font-size:15px;font-weight:700;margin:0 0 4px}
+  .ttcard .tttype{display:inline-block;font-size:10px;padding:2px 7px;background:var(--ink);color:var(--paper);border-radius:10px;letter-spacing:.05em;margin-left:6px;vertical-align:2px}
+  .ttcard .ttline{font-size:13px;color:var(--ink);margin:6px 0 0;line-height:1.65}
+  .ttcard .ttline b{color:var(--muted);font-size:11px;display:block;letter-spacing:.06em;text-transform:uppercase;margin-bottom:2px}
+
+  /* Tip ボックス */
+  .qtip{background:#fff8eb;border:1px solid #d4b674;border-radius:var(--radius-s);
+    padding:11px 14px;margin:12px 0;font-size:13px;line-height:1.7;display:flex;gap:10px;align-items:flex-start}
+  .qtip .qicon{flex-shrink:0;width:24px;height:24px;background:var(--accent);color:#fff;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;font-style:italic}
+  .qtip .qbody{flex:1}
+  .qtip b{color:var(--accent-deep)}
+
+  /* スライダー軸 (Ch.2の評価入力) */
+  .axis{margin:14px 0}
+
+  /* フレーバーホイール - インタラクティブ */
+  .wheel-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;margin-top:8px}
+  .wheel-cat{background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden}
+  .wheel-cat-head{padding:9px 14px;color:#fff;font-weight:700;font-size:13.5px;letter-spacing:.02em;display:flex;justify-content:space-between;align-items:center}
+  .wheel-cat-body{padding:10px 12px;display:flex;flex-wrap:wrap;gap:6px}
+  .fchip{font-family:inherit;border:1px solid var(--line);background:#fff;color:var(--ink);
+    padding:5px 11px;border-radius:14px;font-size:12.5px;cursor:pointer;position:relative;transition:.12s}
+  .fchip:hover{border-color:var(--accent);transform:translateY(-1px)}
+  .fchip.sel{background:var(--accent);color:#fff;border-color:var(--accent);font-weight:700}
+  .fchip .info{display:inline-block;width:14px;height:14px;border-radius:50%;background:rgba(0,0,0,.08);color:var(--muted);font-size:10px;line-height:14px;text-align:center;margin-left:5px;cursor:pointer;font-style:italic;font-weight:700}
+  .fchip.sel .info{background:rgba(255,255,255,.3);color:#fff}
+
+  /* 選択中フレーバーの集約 */
+  .selected-flavors{margin:10px 0;min-height:34px;padding:10px;background:var(--paper);border:1px dashed var(--line);border-radius:var(--radius-s);display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+  .selected-flavors .empty{color:var(--muted);font-style:italic;font-size:13px}
+
+  /* フレーバー辞書 */
+  .dict{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;margin-top:14px}
+  .dict-card{background:var(--paper-2);border:1px solid var(--line);border-radius:var(--radius);padding:14px;font-size:13px}
+  .dict-card h4{margin:0 0 6px;font-size:14px;display:flex;align-items:center;gap:8px}
+  .dict-card .swatch{width:12px;height:12px;border-radius:50%;flex-shrink:0}
+  .dict-card .meta{font-size:11px;color:var(--muted);margin:0 0 8px;letter-spacing:.04em}
+  .dict-card .def{margin:0 0 6px;color:var(--ink-2);line-height:1.65}
+  .dict-card .ex{margin:0;color:var(--muted);font-size:12px;font-style:italic}
+
+  /* ===== 抽出タイムライン ===== */
+  .timeline-wrap{background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);
+    padding:22px 22px 18px;margin:14px 0}
+  .timeline-track{position:relative;height:80px;border-radius:var(--radius);overflow:hidden;
+    background:linear-gradient(90deg,
+      #d8e1a8 0%, #d8e1a8 30%,
+      #e8c98c 30%, #e8c98c 65%,
+      #8a5a6b 65%, #8a5a6b 100%);
+    margin:0 0 8px}
+  .timeline-track .phase-label{position:absolute;top:50%;transform:translateY(-50%);
+    color:var(--ink);font-weight:700;font-size:13px;letter-spacing:.06em;text-shadow:0 1px 0 rgba(245,239,228,.5);
+    pointer-events:none;text-align:center;line-height:1.3}
+  .timeline-track .phase-label small{display:block;font-size:10px;font-weight:600;color:var(--ink-2);letter-spacing:.04em;margin-top:2px;opacity:.8}
+  .timeline-track .phase-1{left:15%;width:30%;transform:translate(-50%,-50%);left:15%}
+  .timeline-track .phase-2{left:47.5%;width:35%;transform:translate(-50%,-50%)}
+  .timeline-track .phase-3{left:82.5%;width:35%;transform:translate(-50%,-50%)}
+  .timeline-marker{position:absolute;top:-6px;width:6px;height:92px;background:var(--ink);
+    border-radius:3px;pointer-events:none;box-shadow:0 0 0 3px rgba(245,239,228,.6),0 2px 6px rgba(0,0,0,.3);
+    transition:left .15s}
+  .timeline-marker::before{content:'';position:absolute;top:-10px;left:50%;transform:translateX(-50%);
+    width:0;height:0;border-left:8px solid transparent;border-right:8px solid transparent;border-top:10px solid var(--ink)}
+  .timeline-scale{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);
+    letter-spacing:.04em;margin-top:4px;font-weight:600}
+  .timeline-slider{width:100%;margin:18px 0 8px;accent-color:var(--ink)}
+  .timeline-controls{display:flex;gap:8px;margin:6px 0 14px;flex-wrap:wrap;justify-content:center}
+  .timeline-controls button{font-size:12px;padding:6px 12px}
+  .extract-state{padding:16px 18px;border-radius:var(--radius);margin-top:12px;
+    border:2px solid var(--line);background:var(--paper);transition:.2s}
+  .extract-state.under{border-color:#8aa84a;background:#f0f5dc}
+  .extract-state.good{border-color:var(--accent);background:#fbf2e0}
+  .extract-state.over{border-color:#8a4a6a;background:#f0e2ea}
+  .extract-state .lab{display:flex;align-items:center;gap:8px;margin:0 0 6px}
+  .extract-state .dot{width:11px;height:11px;border-radius:50%;flex-shrink:0}
+  .extract-state.under .dot{background:#7a8a2e}
+  .extract-state.good .dot{background:var(--accent)}
+  .extract-state.over .dot{background:#8a4a6a}
+  .extract-state h4{margin:0;font-size:15px;letter-spacing:.02em}
+  .extract-state .body-txt{font-size:13.5px;color:var(--ink-2);margin:6px 0 0;line-height:1.7}
+  .extract-state .flavors-out{margin-top:10px;display:flex;flex-wrap:wrap;gap:5px}
+  .extract-state .ftag{font-size:11.5px;padding:3px 9px;background:rgba(255,255,255,.7);
+    border:1px solid var(--line);border-radius:11px;color:var(--ink-2)}
+  .extract-state.under .ftag{background:rgba(255,255,255,.8);border-color:#b8c478}
+  .extract-state.good .ftag{background:rgba(255,255,255,.85);border-color:#d6b87a}
+  .extract-state.over .ftag{background:rgba(255,255,255,.75);border-color:#b88aa0}
+
+  .compound-rows{margin-top:14px}
+  .compound-row{display:flex;align-items:center;gap:12px;padding:9px 0;border-bottom:1px dashed var(--line)}
+  .compound-row:last-child{border-bottom:none}
+  .compound-row .cname{width:130px;flex-shrink:0;font-size:13px;font-weight:600}
+  .compound-row .cbar{flex:1;height:14px;background:var(--paper-3);border-radius:7px;overflow:hidden;position:relative}
+  .compound-row .cfill{height:100%;border-radius:7px;transition:width .25s ease, opacity .25s}
+  .compound-row.acid .cfill{background:linear-gradient(90deg,#a8b85a,#7a8a2e)}
+  .compound-row.sweet .cfill{background:linear-gradient(90deg,#e0b870,#c08a3e)}
+  .compound-row.bitter .cfill{background:linear-gradient(90deg,#a86b8a,#8a4a6a)}
+  .compound-row .cval{width:36px;text-align:right;font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums}
+
+  /* ===== キャリブレーション レシピカード ===== */
+  .calib-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin:14px 0}
+  .calib-card{background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);
+    overflow:hidden;position:relative;box-shadow:0 2px 0 var(--paper-3),var(--shadow);transition:.2s}
+  .calib-card:hover{transform:translateY(-3px);box-shadow:0 4px 0 var(--paper-3),var(--shadow)}
+  .calib-card .ribbon{position:absolute;top:14px;right:-32px;background:var(--accent);color:#fff;
+    font-size:10px;font-weight:700;padding:3px 36px;transform:rotate(35deg);letter-spacing:.08em;z-index:2}
+  .calib-head{padding:18px 18px 14px;text-align:center;position:relative}
+  .calib-emoji{font-size:38px;line-height:1;margin-bottom:6px;display:block}
+  .calib-card h3{margin:0 0 3px;font-size:17px;font-weight:700}
+  .calib-card .subj{font-size:11px;color:var(--accent-deep);font-weight:700;letter-spacing:.16em;text-transform:uppercase}
+  .calib-card .sci{font-size:11.5px;color:var(--muted);font-style:italic;margin-top:4px}
+  .calib-body{padding:0 18px 18px}
+  .calib-body h4{font-size:11.5px;color:var(--muted);letter-spacing:.12em;text-transform:uppercase;
+    margin:12px 0 6px;font-weight:700}
+  .calib-ingredients{background:var(--paper-2);border-radius:var(--radius-s);padding:10px 12px;margin-bottom:4px}
+  .calib-ingredients li{font-size:13px;line-height:1.6}
+  .calib-steps{padding-left:0;list-style:none;counter-reset:step}
+  .calib-steps li{counter-increment:step;padding:6px 0 6px 30px;position:relative;font-size:13px;line-height:1.6}
+  .calib-steps li::before{content:counter(step);position:absolute;left:0;top:6px;width:22px;height:22px;
+    background:var(--accent);color:#fff;border-radius:50%;text-align:center;line-height:22px;
+    font-size:11px;font-weight:700}
+  .calib-feel{background:var(--paper-2);border-left:3px solid var(--accent);
+    border-radius:0 var(--radius-s) var(--radius-s) 0;padding:11px 13px;margin-top:10px;font-size:12.5px;line-height:1.65}
+  .calib-feel b{color:var(--accent-deep);font-size:11px;letter-spacing:.08em;text-transform:uppercase;display:block;margin-bottom:3px}
+
+  /* カード固有のアクセント */
+  .calib-card.citric .ribbon{background:#d8a82a}
+  .calib-card.citric .subj{color:#a87810}
+  .calib-card.malic .ribbon{background:#7a9a4a}
+  .calib-card.malic .subj{color:#5a7a2e}
+  .calib-card.astring .ribbon{background:#8a4a6a}
+  .calib-card.astring .subj{color:#6a3050}
+
+  /* ===== ネガティブフレーバー解剖学 ===== */
+  .defect-list{display:flex;flex-direction:column;gap:10px;margin:14px 0}
+  .defect-item{background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;transition:.15s}
+  .defect-item.open{border-color:var(--accent);box-shadow:var(--shadow)}
+  .defect-header{padding:14px 18px;cursor:pointer;display:flex;align-items:center;gap:12px;
+    background:var(--paper);transition:.15s;user-select:none}
+  .defect-header:hover{background:var(--paper-2)}
+  .defect-item.open .defect-header{background:var(--paper-2)}
+  .defect-vs{flex:1}
+  .defect-vs .pair{font-weight:700;font-size:14.5px;letter-spacing:.01em}
+  .defect-vs .pair .sep{color:var(--muted);font-weight:400;margin:0 8px;font-size:13px}
+  .defect-vs .pair .a{color:var(--ink)}
+  .defect-vs .pair .b{color:var(--over)}
+  .defect-vs .sub{font-size:11.5px;color:var(--muted);margin-top:2px;letter-spacing:.02em}
+  .defect-chev{width:24px;height:24px;border-radius:50%;background:var(--paper-3);
+    display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--ink);
+    transition:.2s;font-weight:700;flex-shrink:0}
+  .defect-item.open .defect-chev{background:var(--accent);color:#fff;transform:rotate(180deg)}
+  .defect-body{max-height:0;overflow:hidden;transition:max-height .3s ease}
+  .defect-item.open .defect-body{max-height:1200px}
+  .defect-inner{padding:0 18px 18px;border-top:1px dashed var(--line);margin-top:0}
+  .defect-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px}
+  @media(max-width:560px){.defect-grid{grid-template-columns:1fr}}
+  .defect-side{background:var(--paper-2);border-radius:var(--radius-s);padding:13px 15px}
+  .defect-side h5{margin:0 0 6px;font-size:12px;letter-spacing:.1em;text-transform:uppercase;font-weight:700;display:flex;align-items:center;gap:6px}
+  .defect-side h5 .badge{font-size:10px;padding:1px 7px;border-radius:9px;letter-spacing:.04em;text-transform:none;font-weight:700}
+  .defect-side.good h5 .badge{background:var(--good);color:#fff}
+  .defect-side.bad h5 .badge{background:var(--over);color:#fff}
+  .defect-side p{margin:0 0 8px;font-size:13px;line-height:1.65}
+  .defect-side ul{margin:0;padding-left:18px;font-size:12.5px;line-height:1.7;color:var(--ink-2)}
+  .defect-action{margin-top:14px;background:var(--ink);color:var(--paper);border-radius:var(--radius-s);
+    padding:13px 16px;font-size:13px;line-height:1.7}
+  .defect-action b{color:var(--accent);display:block;font-size:11px;letter-spacing:.1em;text-transform:uppercase;margin-bottom:5px}
+  .defect-action .param{display:inline-block;background:var(--accent);color:#fff;padding:2px 9px;border-radius:10px;font-size:11.5px;font-weight:700;margin:3px 4px 3px 0}
+  .defect-action .arrow{display:inline-block;margin:0 4px;opacity:.7}
+
+  /* Section nav (sticky内目次) */
+  .secnav{position:sticky;top:50px;background:rgba(245,239,228,.95);backdrop-filter:blur(8px);
+    border-bottom:1px solid var(--line);padding:8px 0;margin:0 -20px 16px;z-index:30}
+  .secnav .inner{max-width:880px;margin:0 auto;padding:0 20px;display:flex;gap:4px;overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .secnav a{font-size:12px;color:var(--muted);padding:4px 10px;border-radius:14px;text-decoration:none;white-space:nowrap;flex-shrink:0;transition:.12s}
+  .secnav a:hover,.secnav a.active{background:var(--ink);color:var(--paper)}
+  .secnav::-webkit-scrollbar{display:none}
+</style>
 </head>
 <body>
 <script src="app.js"></script>
@@ -12,26 +227,169 @@
 
 <div class="wrap">
   <header class="page">
-    <p class="eyebrow">Chapter 2</p>
+    <p class="eyebrow">Chapter 2 · Sensory Language</p>
     <h1>味の言語化トレーニング</h1>
-    <p class="lede">「美味しい」「美味しくない」で止まると、抽出の改善先が見えない。味を5軸＋具体語彙に分解する習慣をつけると、口に入った瞬間に「次に何を直すか」が浮かぶようになる。</p>
+    <p class="lede">「美味しい」「美味しくない」で止まると、抽出の改善先が見えない。SCA Coffee Tasters Flavor Wheel と Q Grader の評価軸を、自分の感覚に翻訳する技術を身につける。</p>
   </header>
 
-  <h2>1. 5軸分解の手順</h2>
-  <p>カップを口に含んだら、頭の中で順番に問いを立てる。最初は時間がかかっていい。慣れると数秒で全部回るようになる。</p>
-  <div class="panel">
-    <table>
-      <tr><th>軸</th><th>問い</th><th>何を見る</th></tr>
-      <tr><td>① 酸質</td><td>明るい？穏やか？ 何の酸？</td><td>レモン様／りんご様／発酵感／フラットか</td></tr>
-      <tr><td>② 甘さ</td><td>砂糖？蜂蜜？果実？</td><td>強さと、口に残る長さ</td></tr>
-      <tr><td>③ 苦味</td><td>心地よいか刺さるか</td><td>ロースト由来 vs 過抽出由来</td></tr>
-      <tr><td>④ ボディ</td><td>水か紅茶かシロップか</td><td>口に残る重さ・質感</td></tr>
-      <tr><td>⑤ 余韻</td><td>消える？伸びる？汚れる？</td><td>飲み込んだ後、何がどれだけ続くか</td></tr>
-    </table>
+  <nav class="secnav">
+    <div class="inner">
+      <a href="#sec1">5軸の正体</a>
+      <a href="#sec2">感覚マッピング</a>
+      <a href="#sec3">記述ビルダー</a>
+      <a href="#sec4">フレーバーホイール</a>
+      <a href="#sec5">フレーバー辞書</a>
+      <a href="#sec6">抽出タイムライン</a>
+      <a href="#sec7">味覚キャリブレーション</a>
+      <a href="#sec8">ネガティブ解剖学</a>
+      <a href="#sec9">Claudeに相談</a>
+    </div>
+  </nav>
+
+  <!-- ====== 1. 5軸の正体 ====== -->
+  <h2 id="sec1">1. 5軸の正体 — Q Grader はここを見る</h2>
+  <p>SCA カッピングフォームを日常用に圧縮した5軸。それぞれに「強さ」だけでなく「質」を見る癖をつけると、抽出の判断材料が一気に増える。</p>
+
+  <!-- 酸質 -->
+  <div class="axis-card">
+    <div class="axis-head"><span class="axis-num acid">①</span><h3>酸質（Acidity）</h3><span class="qg">Q-Grader View</span></div>
+    <div class="axis-body">
+      <p>「酸っぱい／酸っぱくない」ではなく、<b>何の酸か</b>を見る。コーヒーに含まれる酸は10種類以上あり、それぞれ感じる場所と質が違う。</p>
+      <table>
+        <tr><th>酸の種類</th><th>感じ方</th><th>食材で言うと</th></tr>
+        <tr><td>クエン酸</td><td>明るく、舌の両脇に鋭く立つ</td><td>レモン、ライム、グレープフルーツ</td></tr>
+        <tr><td>リンゴ酸</td><td>丸く、フルーティでジューシー</td><td>青リンゴ、洋梨、白ブドウ</td></tr>
+        <tr><td>酒石酸</td><td>キレと余韻が長い</td><td>赤ブドウ、ワイン</td></tr>
+        <tr><td>リン酸</td><td>シュワッと弾ける感覚</td><td>炭酸、コーラ</td></tr>
+        <tr><td>乳酸</td><td>柔らかくクリーミー</td><td>ヨーグルト、発酵バター</td></tr>
+        <tr><td>酢酸</td><td>ピリッと尖る（多すぎると欠点）</td><td>酢、過発酵</td></tr>
+      </table>
+      <div class="qtip">
+        <span class="qicon">Q</span>
+        <div class="qbody"><b>Q-Grader Tip:</b> 「Acidity（酸の強さ）」と「Acid Quality（酸の質）」は別評価。強くても質が低ければ減点。一杯から複数の酸を識別できると評価語彙が一段深まる（"レモンのクエン酸とリンゴ酸の調和"のように）。エチオピア・ケニアは強く明るい酸、コロンビアは丸い、ブラジルは穏やか、というのは品種×精製×焙煎の総合結果。</div>
+      </div>
+    </div>
   </div>
 
-  <h2>2. 記述ビルダー</h2>
-  <p>5軸スライダー＋語彙チップで、いま飲んだ一杯を文章化する。出来た記述はそのまま Ch.3 のドリップログにコピペできる。</p>
+  <!-- 甘さ -->
+  <div class="axis-card">
+    <div class="axis-head"><span class="axis-num sweet">②</span><h3>甘さ（Sweetness）</h3><span class="qg">Q-Grader View</span></div>
+    <div class="axis-body">
+      <p>コーヒーには糖類はほぼ残っていない。だが「甘く感じる」のはメイラード反応物・カラメル化生成物・有機酸とのバランスが脳に「甘い」と認識させているから。「<b>砂糖の甘さ</b>」より「<b>余韻に残るどんな甘さか</b>」で見る。</p>
+      <table>
+        <tr><th>甘さのタイプ</th><th>食材で言うと</th></tr>
+        <tr><td>シュガー系</td><td>白砂糖、メープル、ブラウンシュガー</td></tr>
+        <tr><td>ハニー系</td><td>蜂蜜、メープルシロップ</td></tr>
+        <tr><td>ドライフルーツ系</td><td>レーズン、デーツ、いちじく</td></tr>
+        <tr><td>キャラメル系</td><td>キャラメル、ヌガー、トフィー</td></tr>
+        <tr><td>チョコレート系</td><td>ミルクチョコ、ダークチョコ</td></tr>
+        <tr><td>果実糖系</td><td>熟した桃、メロン、マンゴー</td></tr>
+      </table>
+      <div class="qtip">
+        <span class="qicon">Q</span>
+        <div class="qbody"><b>Q-Grader Tip:</b> SCA カッピングでは Sweetness は uniformity と同じく "ある/ない" の二値的評価（10点満点で出る/出ない）。だが日常評価では「どんな甘さがどれくらい持続するか」を見るほうが抽出改善に役立つ。<b>甘さが弱い＝抽出不足の最重要シグナル</b>。</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 苦味 -->
+  <div class="axis-card">
+    <div class="axis-head"><span class="axis-num bitter">③</span><h3>苦味（Bitterness）</h3><span class="qg">Q-Grader View</span></div>
+    <div class="axis-body">
+      <p>苦味は2種類ある。<b>由来で区別する</b>のが大事。</p>
+      <table>
+        <tr><th>由来</th><th>性質</th><th>味わい</th></tr>
+        <tr><td>ロースト由来</td><td>焙煎の化学変化</td><td>ダークチョコ、カカオ、香ばしい苦味</td></tr>
+        <tr><td>過抽出由来</td><td>抽出のし過ぎ</td><td>渋み、舌が乾く、後味が悪い</td></tr>
+      </table>
+      <div class="qtip">
+        <span class="qicon">Q</span>
+        <div class="qbody"><b>Q-Grader Tip:</b> カフェイン由来の苦味は実は全体の10%程度。多くはクロロゲン酸ラクトン（焙煎進行で増加）とフェニリンダン（深煎りで増加）由来。<b>「ロースト苦味は心地よく、過抽出苦味は不快」</b>と切り分けると、抽出を直すべきか焙煎度を変えるべきかが見える。渋み（astringency）は苦味とは別軸で、過抽出やタンパク質残留が原因。</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ボディ -->
+  <div class="axis-card">
+    <div class="axis-head"><span class="axis-num body">④</span><h3>ボディ（Body / Mouthfeel）</h3><span class="qg">Q-Grader View</span></div>
+    <div class="axis-body">
+      <p>触覚的な評価軸。重さ・厚み・テクスチャ。SCA では「Heavy / Medium / Light」と「Smooth / Rough」の二次元で評価する。</p>
+      <table>
+        <tr><th>口当たり</th><th>食材で言うと</th></tr>
+        <tr><td>Watery（水様）</td><td>緑茶、水</td></tr>
+        <tr><td>Tea-like（紅茶様）</td><td>紅茶、ダージリン</td></tr>
+        <tr><td>Juicy（ジューシー）</td><td>果実ジュース、果肉感</td></tr>
+        <tr><td>Creamy（クリーミー）</td><td>牛乳、ラテ</td></tr>
+        <tr><td>Syrupy（シロップ様）</td><td>蜂蜜、ハニー</td></tr>
+        <tr><td>Velvety（ベルベット）</td><td>滑らかで上質</td></tr>
+      </table>
+      <div class="qtip">
+        <span class="qicon">Q</span>
+        <div class="qbody"><b>Q-Grader Tip:</b> ボディは主に油分・微粉・コロイド粒子で決まる。<b>フィルター素材でほぼ上限が決まる</b>：金属フィルター＞アバカ＞紙（白）の順でボディが増す。注ぎ方では「撹拌が強い」「総時間が長い」とボディが増す傾向。深煎り豆は油分が多いので元々ボディが乗りやすい。</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 余韻 -->
+  <div class="axis-card">
+    <div class="axis-head"><span class="axis-num after">⑤</span><h3>余韻（Aftertaste / Finish）</h3><span class="qg">Q-Grader View</span></div>
+    <div class="axis-body">
+      <p>飲み込んだ後、何が・どれだけ・どんな質で残るか。<b>余韻の質が、スペシャルティとコモディティを分ける</b>と言っても過言ではない。</p>
+      <table>
+        <tr><th>余韻のタイプ</th><th>意味</th></tr>
+        <tr><td>Clean & Short</td><td>後味がスッと消える。クリーン。</td></tr>
+        <tr><td>Sweet & Long</td><td>甘さが伸びて続く（理想）</td></tr>
+        <tr><td>Floral / Tea-like Finish</td><td>花や紅茶の余韻が残る</td></tr>
+        <tr><td>Dry / Astringent</td><td>渋く乾く（過抽出/欠点）</td></tr>
+        <tr><td>Harsh / Burnt</td><td>苦く焦げ感（過焙煎/過抽出）</td></tr>
+      </table>
+      <div class="qtip">
+        <span class="qicon">Q</span>
+        <div class="qbody"><b>Q-Grader Tip:</b> Aftertaste は SCA フォームで独立評価項目（10点）。飲み込んでから<b>「7〜15秒の間」に何が残るか</b>を意識する。慣れていないと「終わった味」を見逃しがち。冷めてから余韻だけ評価する練習も有効。</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====== 2. 感覚マッピング (酸の質×強さ) ====== -->
+  <h2 id="sec2">2. 感覚マッピング — 酸の質を視覚で掴む</h2>
+  <p>「明るい酸」とは何か。下のマップは縦軸に <b>強さ</b>、横軸に <b>質（鋭さ ↔ 丸み）</b>をとり、コーヒーで頻出する酸味を配置したもの。各バブルをタップすると、感覚と食材イメージが下に表示される。</p>
+
+  <div class="panel">
+    <div class="map2d-wrap">
+      <div class="map2d" id="acidMap">
+        <div class="ax-label-y">強さ →</div>
+        <div class="ax-label-x">← 鋭い・キレ&nbsp;&nbsp;&nbsp;&nbsp;質&nbsp;&nbsp;&nbsp;&nbsp;丸い・ジューシー →</div>
+        <!-- グリッド線 -->
+        <div class="grid-y" style="left:50%"></div>
+        <div class="grid-x" style="top:50%"></div>
+      </div>
+    </div>
+    <div class="ttcard" id="acidTT">
+      <div class="ttname">タップして詳細を見る<span class="tttype">SENSORY</span></div>
+      <p class="ttline muted small">上のバブルをタップすると、その酸の感覚と典型食材がここに表示されます。</p>
+    </div>
+  </div>
+
+  <h3 style="margin-top:24px">甘さの方向マップ</h3>
+  <p>甘さも「強さ × 質の方向（シュガー系↔フルーツ系）」で配置すると整理できる。</p>
+  <div class="panel">
+    <div class="map2d-wrap">
+      <div class="map2d" id="sweetMap">
+        <div class="ax-label-y">強さ →</div>
+        <div class="ax-label-x">← シュガー・キャラメル系&nbsp;&nbsp;&nbsp;&nbsp;質&nbsp;&nbsp;&nbsp;&nbsp;フルーツ・蜜系 →</div>
+        <div class="grid-y" style="left:50%"></div>
+        <div class="grid-x" style="top:50%"></div>
+      </div>
+    </div>
+    <div class="ttcard" id="sweetTT">
+      <div class="ttname">タップして詳細を見る<span class="tttype">SENSORY</span></div>
+      <p class="ttline muted small">バブルをタップしてください。</p>
+    </div>
+  </div>
+
+  <!-- ====== 3. 記述ビルダー ====== -->
+  <h2 id="sec3">3. 記述ビルダー</h2>
+  <p>5軸スライダー＋下のフレーバーホイールで選んだ語彙を組み合わせ、いま飲んだ一杯を文章化する。完成した記述は Ch.3 のドリップログに貼れる。</p>
 
   <div class="panel">
     <div class="axis">
@@ -60,8 +418,8 @@
       <div class="ends"><span>短い</span><span>長い</span></div>
     </div>
 
-    <label class="fld">感じた具体フレーバー（下のチップから選ぶ）</label>
-    <div id="flavor-area"></div>
+    <label class="fld">選んだフレーバー</label>
+    <div class="selected-flavors" id="selFlavors"><span class="empty">下のフレーバーホイールから選ぶか、フレーバー辞書で確認してから戻ってきてください</span></div>
 
     <label class="fld">記述プレビュー</label>
     <div class="promptbox" style="background:var(--paper);color:var(--ink);font-family:inherit;font-size:13.5px;max-height:none" id="describe-out">スライダーを動かすと、記述文と抽出の手がかりがここに出ます。</div>
@@ -71,26 +429,309 @@
     </div>
   </div>
 
-  <h2>3. SCA フレーバーホイール（簡略版）</h2>
-  <p>SCAの公式フレーバーホイールを日常語で簡略化したもの。大分類から具体語へ降りていく。1日1カップ、必ず3つは語彙を選ぶ習慣を。</p>
-  <div id="wheel-list" class="panel"></div>
-
-  <h2>4. 味から抽出を逆算するドリル</h2>
-  <p>味の記述を見て、抽出のどこに原因があるかを当てる練習。実際のカップを思い浮かべながら。</p>
-  <div class="panel" id="drill-panel"></div>
-  <div class="btnrow">
-    <button class="ghost" id="drill-next" style="display:none">次の問題 →</button>
+  <!-- ====== 4. フレーバーホイール ====== -->
+  <h2 id="sec4">4. SCA フレーバーホイール（拡張版）</h2>
+  <p>SCA Coffee Tasters Flavor Wheel（2016版）の主要語彙＋日本のスペシャルティ文脈で頻出する語彙。チップをタップすると選択、<b style="background:rgba(0,0,0,.08);padding:1px 6px;border-radius:8px;font-size:11px"><i>i</i></b> をタップすると下に詳細解説が出る。</p>
+  <div class="wheel-grid" id="wheel"></div>
+  <div class="ttcard" id="flavorTT">
+    <div class="ttname">フレーバー詳細<span class="tttype">FLAVOR</span></div>
+    <p class="ttline muted small">チップの <i>i</i> をタップすると、ここに詳細が出ます。</p>
   </div>
 
-  <h2>5. Claudeをカッピング指導者にする</h2>
-  <p>このプロンプトをコピーしてClaudeに貼り、上で作った記述（コピーボタンで取ったもの）を渡すと、フレーバー語彙の精度・抽出との関連・次の試行を指導してくれる。</p>
-  <div class="promptbox" id="prompt-claude">あなたは SCA Q Grader 資格を持つカッピング指導者です。SCA Sensory Skills Handbook と Coffee Tasters Flavor Wheel を主な拠り所に、初学者の「味の語彙」を育てる役割を担います。
+  <!-- ====== 5. フレーバー辞書 ====== -->
+  <h2 id="sec5">5. フレーバー辞書 — スペシャルティ頻出語の定義集</h2>
+  <p>スペシャルティコーヒー店のテイスティングノートで頻出する語彙を、SCA Flavor Wheel と World Coffee Research の定義に近い形で整理。"これ何？" を残さない参照用。</p>
+  <div id="dict"></div>
 
-私は Brewers Lab Chapter 2「味の言語化トレーニング」を学習中の中級ドリッパーです。今からあるカップについての「私の記述」を渡します。あなたは次を行ってください：
+  <!-- ====== 6. 抽出タイムライン ====== -->
+  <h2 id="sec6">6. 味の抽出タイムライン — The Extraction Curve</h2>
+  <p>コーヒー成分は一斉に溶け出すのではなく、<b>溶けやすい順番</b>がある。下のスライダーを動かすと、抽出をどこで止めたかによって、カップに残る味の構成がどう変わるかが見える。Ch.3 のレシピ開発で「挽き目を細かく＝抽出を進める」と聞いたとき、何が増えて何が消えるかをここで腹落ちさせる。</p>
+
+  <div class="timeline-wrap">
+    <div class="timeline-track" id="timelineTrack">
+      <div class="phase-label phase-1">序盤<small>酸味・果実味</small></div>
+      <div class="phase-label phase-2">中盤<small>甘さ・ボディ</small></div>
+      <div class="phase-label phase-3">終盤<small>苦味・渋み</small></div>
+      <div class="timeline-marker" id="tlMarker" style="left:50%"></div>
+    </div>
+    <div class="timeline-scale">
+      <span>抽出開始</span>
+      <span>30%</span>
+      <span>65%</span>
+      <span>抽出完了</span>
+    </div>
+    <input type="range" id="tlSlider" class="timeline-slider" min="0" max="100" value="50">
+    <div class="timeline-controls">
+      <button onclick="setTimeline(15)">未抽出（15%）</button>
+      <button onclick="setTimeline(50)">適正バランス（50%）</button>
+      <button onclick="setTimeline(85)">過抽出（85%）</button>
+    </div>
+
+    <div class="extract-state" id="extractState">
+      <div class="lab"><span class="dot"></span><h4 id="esTitle">適正バランス</h4></div>
+      <p class="body-txt" id="esBody">序盤の酸と中盤の甘さがバランスし、終盤の苦味はまだ穏やか。SCAゴールデンカップ的にはこのあたり（EY 18〜22%相当）。</p>
+      <div class="flavors-out" id="esFlavors"></div>
+    </div>
+
+    <div class="compound-rows" id="compoundRows">
+      <div class="compound-row acid">
+        <span class="cname">序盤：酸・果実</span>
+        <div class="cbar"><div class="cfill" id="bar-acid" style="width:50%"></div></div>
+        <span class="cval" id="val-acid">50%</span>
+      </div>
+      <div class="compound-row sweet">
+        <span class="cname">中盤：甘さ・ボディ</span>
+        <div class="cbar"><div class="cfill" id="bar-sweet" style="width:35%"></div></div>
+        <span class="cval" id="val-sweet">35%</span>
+      </div>
+      <div class="compound-row bitter">
+        <span class="cname">終盤：苦味・渋み</span>
+        <div class="cbar"><div class="cfill" id="bar-bitter" style="width:10%"></div></div>
+        <span class="cval" id="val-bitter">10%</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="qtip">
+    <span class="qicon">Q</span>
+    <div class="qbody"><b>Q-Grader Tip:</b> これは「成分の溶解順序」を理解するためのモデル図。実際には序盤・中盤・終盤が完全分離するわけではなく、すべて並行して進行している。だが「<b>後ろの成分ほど後から強く出る</b>」という大原則は実務的に有効。抽出を止めるタイミング（挽き目・湯温・時間）で、どの成分まで取り込むかが決まる。Ch.5 で扱う EY（抽出率）も基本的にこの曲線の位置を数値化したもの。</div>
+  </div>
+
+  <!-- ====== 7. 味覚キャリブレーション ====== -->
+  <h2 id="sec7">7. 自宅でできる！味覚キャリブレーションガイド</h2>
+  <p>口の中に「<b>これがクエン酸の感覚</b>」「<b>これが渋みの正体</b>」という<b>基準サンプル</b>を持っていると、コーヒーを飲んだ瞬間の判定が一気に速く正確になる。SCA Sensory Skills の校正手法を、家にあるもので再現できる形にしました。週末に20分、ぜひ。</p>
+
+  <div class="calib-grid">
+    <!-- クエン酸 -->
+    <div class="calib-card citric">
+      <div class="ribbon">LV.1</div>
+      <div class="calib-head">
+        <span class="calib-emoji">🍋</span>
+        <h3>レモン水でクエン酸を覚える</h3>
+        <div class="subj">Citric Acid Calibration</div>
+        <div class="sci">明るく鋭い、舌の両脇に立つ酸</div>
+      </div>
+      <div class="calib-body">
+        <h4>用意するもの</h4>
+        <ul class="calib-ingredients">
+          <li>レモン汁 小さじ1（5g程度）</li>
+          <li>水 100ml（常温）</li>
+          <li>ガラスのカップ</li>
+        </ul>
+        <h4>手順</h4>
+        <ol class="calib-steps">
+          <li>水にレモン汁を加えて混ぜる</li>
+          <li>少量を口に含み、舌の両脇で受け止める</li>
+          <li>飲み込まずに5秒、酸の位置と質を観察</li>
+          <li>飲み込んでから余韻のキレ・長さを観察</li>
+        </ol>
+        <div class="calib-feel">
+          <b>こう感じたら正解</b>
+          舌の<b>両脇に鋭く</b>立ち、唾液が湧く。後味は比較的短くキレる。これが<b>クエン酸の典型像</b>。ケニア・エチオピア浅煎り・コロンビア浅煎りで頻出する「明るい酸」。
+        </div>
+      </div>
+    </div>
+
+    <!-- リンゴ酸 -->
+    <div class="calib-card malic">
+      <div class="ribbon">LV.2</div>
+      <div class="calib-head">
+        <span class="calib-emoji">🍎</span>
+        <h3>リンゴジュースでリンゴ酸を覚える</h3>
+        <div class="subj">Malic Acid Calibration</div>
+        <div class="sci">丸く、ジューシーで持続性のある酸</div>
+      </div>
+      <div class="calib-body">
+        <h4>用意するもの</h4>
+        <ul class="calib-ingredients">
+          <li>100%リンゴジュース 30ml（果汁100%表記のもの）</li>
+          <li>水 70ml</li>
+          <li>※ レモン水と飲み比べると違いがクッキリ</li>
+        </ul>
+        <h4>手順</h4>
+        <ol class="calib-steps">
+          <li>水でリンゴジュースを薄め、口に含む</li>
+          <li>クエン酸（レモン水）と違う「酸の位置」を意識</li>
+          <li>飲み込んでから後味の長さに注目</li>
+          <li>もう一度レモン水と交互に。違いを言語化</li>
+        </ol>
+        <div class="calib-feel">
+          <b>こう感じたら正解</b>
+          レモンより<b>舌の前方〜中央で丸く</b>感じ、後味に<b>甘さが伸びる</b>。これが<b>リンゴ酸の典型像</b>。コロンビア・コスタリカ・エルサルバドルの中浅煎りでよく出会う。
+        </div>
+      </div>
+    </div>
+
+    <!-- 渋み -->
+    <div class="calib-card astring">
+      <div class="ribbon">LV.3</div>
+      <div class="calib-head">
+        <span class="calib-emoji">🍵</span>
+        <h3>放置紅茶で渋み（Astringency）を覚える</h3>
+        <div class="subj">Astringency Calibration</div>
+        <div class="sci">タンパク質を縮ませる「触覚」の感覚</div>
+      </div>
+      <div class="calib-body">
+        <h4>用意するもの</h4>
+        <ul class="calib-ingredients">
+          <li>紅茶のティーバッグ 1個</li>
+          <li>熱湯 200ml</li>
+          <li>タイマー（スマホで可）</li>
+        </ul>
+        <h4>手順</h4>
+        <ol class="calib-steps">
+          <li>熱湯にティーバッグを入れ、<b>10分間</b>放置する</li>
+          <li>少し冷ましてから一口含む</li>
+          <li>口の中の粘膜が<b>キュッと縮む</b>感覚に注目</li>
+          <li>これが「苦味」ではなく「<b>触覚的な収れん</b>」だと確認</li>
+        </ol>
+        <div class="calib-feel">
+          <b>こう感じたら正解</b>
+          舌や頬の内側が<b>乾いて縮む</b>感覚。これは味覚ではなく<b>触覚</b>。コーヒーで「渋い」と感じる時の正体。<b>過抽出</b>のサインとして最重要なので、この感覚を体に入れておくと診断速度が桁違いになる。
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="qtip">
+    <span class="qicon">Q</span>
+    <div class="qbody"><b>Q-Grader Tip:</b> SCA の Sensory Skills では、純粋なクエン酸・リンゴ酸・酒石酸を水に溶かした<b>標準液</b>でこれと同じ訓練をする。家でやるなら身近な食材で十分。3つを<b>2週間隔週</b>で繰り返すと、コーヒーを飲んだ時に「これはクエン酸ベース」「ここに渋みが混じってる」と<b>瞬時に切り分けられる</b>ようになる。これが Ch.3 のレシピ開発で「次に何を直すか」の判断速度を決める。</div>
+  </div>
+
+  <!-- ====== 8. ネガティブフレーバー解剖学 ====== -->
+  <h2 id="sec8">8. ネガティブフレーバー解剖学 — Defect & Extraction Errors</h2>
+  <p>初学者が混同しがちな3組のペアを解剖する。<b>正しく区別できれば、Ch.3 でどのパラメータを動かすべきかが自動的に決まる</b>。タップで展開。</p>
+
+  <div class="defect-list" id="defectList">
+    <!-- 1. 苦味 vs 渋み -->
+    <div class="defect-item" data-defect="bitter-astring">
+      <div class="defect-header" onclick="toggleDefect(this)">
+        <div class="defect-vs">
+          <div class="pair"><span class="a">苦味</span><span class="sep">VS</span><span class="b">渋み</span></div>
+          <div class="sub">舌で感じる味覚 vs 粘膜で感じる触覚</div>
+        </div>
+        <div class="defect-chev">▼</div>
+      </div>
+      <div class="defect-body"><div class="defect-inner">
+        <div class="defect-grid">
+          <div class="defect-side good">
+            <h5>苦味（Bitterness）<span class="badge">味覚</span></h5>
+            <p>舌の<b>奥</b>で感じる、5基本味の一つ。ロースト由来であれば<b>心地よい</b>苦味（ダークチョコ、カカオ、香ばしさ）として機能する。</p>
+            <ul>
+              <li>主因はクロロゲン酸ラクトン・フェニリンダン（焙煎度で増加）</li>
+              <li>カフェイン由来は実は全体の1〜2割程度</li>
+              <li>深煎り豆では「特徴」として歓迎される</li>
+            </ul>
+          </div>
+          <div class="defect-side bad">
+            <h5>渋み（Astringency）<span class="badge">触覚</span></h5>
+            <p>口の中の<b>粘膜全体</b>がキュッと縮む感覚。味ではなく<b>触覚</b>。タンニン様物質が口腔タンパク質と結合して起きる。</p>
+            <ul>
+              <li>主因は過抽出による高分子物質の溶出</li>
+              <li>粒度分布の広さ（微粉混入）も原因</li>
+              <li>不快で長く尾を引く。心地よさはない</li>
+            </ul>
+          </div>
+        </div>
+        <div class="defect-action">
+          <b>Ch.3で動かすべきパラメータ</b>
+          「苦味は強いが心地よい」なら何もしなくてOK（焙煎度の個性）。<b>渋みが出ているなら</b>過抽出のサイン。
+          <span class="param">挽き目を1段粗く</span><span class="arrow">→</span><span class="param">総時間を10〜20秒短く</span><span class="arrow">→</span><span class="param">湯温を2℃下げる</span>のうち<b>1つだけ</b>動かして検証。
+        </div>
+      </div></div>
+    </div>
+
+    <!-- 2. 酸味 vs 酸っぱさ -->
+    <div class="defect-item" data-defect="acid-sour">
+      <div class="defect-header" onclick="toggleDefect(this)">
+        <div class="defect-vs">
+          <div class="pair"><span class="a">酸味（Acidity）</span><span class="sep">VS</span><span class="b">酸っぱさ・酢様（Sour）</span></div>
+          <div class="sub">フルーティで明るい酸 vs 不快に尖る欠点</div>
+        </div>
+        <div class="defect-chev">▼</div>
+      </div>
+      <div class="defect-body"><div class="defect-inner">
+        <div class="defect-grid">
+          <div class="defect-side good">
+            <h5>酸味（Acidity）<span class="badge">スペシャルティ</span></h5>
+            <p>レモン・リンゴ・ベリーのような<b>フルーツを想起させる</b>明るい酸。クエン酸・リンゴ酸・酒石酸が主役。<b>甘さと共存</b>するのが特徴。</p>
+            <ul>
+              <li>SCAカッピングでは高評価対象（Acidity 8点以上）</li>
+              <li>余韻に甘さや果実感が伸びる</li>
+              <li>「明るい」「ジューシー」「複雑」と表現される</li>
+            </ul>
+          </div>
+          <div class="defect-side bad">
+            <h5>酸っぱさ・酢様（Sour / Acetic）<span class="badge">欠点</span></h5>
+            <p>食酢・過発酵フルーツのような<b>ピリッと尖る</b>酸。酢酸主体。<b>甘さが伴わず</b>、不快感が残る。</p>
+            <ul>
+              <li>原因①：未抽出（甘さ・苦味が乗らず酸だけ前に出る）</li>
+              <li>原因②：精製不良・過発酵による豆側の欠点</li>
+              <li>「酢っぽい」「ツン」「平坦に酸だけ」と感じる</li>
+            </ul>
+          </div>
+        </div>
+        <div class="defect-action">
+          <b>Ch.3で動かすべきパラメータ</b>
+          まず<b>豆の問題かを切り分け</b>る：同じ豆を別の淹れ方で試して同じ尖りが出るなら豆側の欠点。<b>抽出側の問題なら未抽出</b>なので、
+          <span class="param">挽き目を1段細かく</span><span class="arrow">→</span><span class="param">湯温を2℃上げる</span><span class="arrow">→</span><span class="param">総時間を10〜20秒延ばす</span>のうち<b>1つだけ</b>。甘さが上がってきたら正解の方向。
+        </div>
+      </div></div>
+    </div>
+
+    <!-- 3. 薄い vs 水っぽい -->
+    <div class="defect-item" data-defect="thin-watery">
+      <div class="defect-header" onclick="toggleDefect(this)">
+        <div class="defect-vs">
+          <div class="pair"><span class="a">薄い（Weak / 低濃度）</span><span class="sep">VS</span><span class="b">水っぽい（Watery / 未抽出）</span></div>
+          <div class="sub">バランスは取れているのに薄い vs バランスが崩れて空っぽ</div>
+        </div>
+        <div class="defect-chev">▼</div>
+      </div>
+      <div class="defect-body"><div class="defect-inner">
+        <div class="defect-grid">
+          <div class="defect-side good">
+            <h5>薄い（低濃度 / Low TDS）<span class="badge">濃度の問題</span></h5>
+            <p>味のバランスは取れている。酸・甘さ・苦味の<b>関係性は正しい</b>のに、ただ<b>濃さが足りない</b>。水で薄めたコーヒーのような印象。</p>
+            <ul>
+              <li>原因：<b>レシオが薄い</b>（湯量が多すぎ、または粉量が少なすぎ）</li>
+              <li>SCA基準ではTDS 1.15%未満</li>
+              <li>飲んだ後の口の中は割と「正常」</li>
+            </ul>
+          </div>
+          <div class="defect-side bad">
+            <h5>水っぽい（未抽出 / Under-extracted）<span class="badge">抽出率の問題</span></h5>
+            <p>濃度の話ではなく<b>抽出が手前で止まっている</b>。酸ばかり前に出て<b>甘さがない</b>、後味が<b>空っぽ</b>。「あれ、なにこれ」という感じ。</p>
+            <ul>
+              <li>原因：挽き目が粗すぎ／湯温が低すぎ／時間が短すぎ</li>
+              <li>SCA基準ではEY 18%未満</li>
+              <li>香りはあるのに味が乗っていない、という違和感</li>
+            </ul>
+          </div>
+        </div>
+        <div class="defect-action">
+          <b>Ch.3で動かすべきパラメータ</b>
+          <b>「薄い」だけ</b>なら<span class="param">レシオを濃く（1:16→1:15）</span>で解決。<b>「水っぽい」</b>なら抽出率の問題なので<span class="param">挽き目を1段細かく</span><span class="arrow">→</span><span class="param">湯温を2℃上げる</span><span class="arrow">→</span><span class="param">時間を延ばす</span>。<b>両者の切り分け</b>がCh.5で扱う「濃度 ≠ 抽出率」の本質。
+        </div>
+      </div></div>
+    </div>
+  </div>
+
+  <div class="qtip">
+    <span class="qicon">Q</span>
+    <div class="qbody"><b>Q-Grader Tip:</b> この3組の切り分けは、SCAカッピングの「Defects（欠点）」を素人向けに翻訳したもの。プロは Sour、Astringent、Bitter、Watery など<b>1単語で原因を特定</b>する語彙を持っている。あなたもこの3組さえ脳に入れば、自分のコーヒーが何で失敗しているかを<b>10秒で判定</b>できるようになる。判定 → Ch.3 でパラメータ調整 → 検証、というループが回り始める。</div>
+  </div>
+
+  <!-- ====== 9. Claude ====== -->
+  <h2 id="sec9">9. Claude をカッピング指導者にする</h2>
+  <p>このプロンプトをコピーしてClaudeに貼り、上で作った記述を渡すと、フレーバー語彙の精度・抽出との関連・次の試行を指導してくれる。</p>
+  <div class="promptbox" id="prompt-claude">あなたは SCA Q Grader 資格を持つカッピング指導者です。SCA Sensory Skills Handbook、SCA Coffee Tasters Flavor Wheel、World Coffee Research Sensory Lexicon を主な拠り所に、初学者の「味の語彙」を育てる役割を担います。
+
+私は Brewers Lab Chapter 2「味の言語化トレーニング」を学習中の中級ドリッパーです。これからあるカップについての「私の記述」を渡します。あなたは次を行ってください：
 
 1. その記述から推定される抽出状態（未抽出/過抽出/バランス/欠点フレーバー）の診断
 2. 私が使った語彙が「具体的に何を指しているか」を、私が共有しやすい食材・飲料に置き換えて再記述
-3. もっと精度を上げるなら次に問うべき自問を3つ提案
+3. 5軸（酸質・甘さ・苦味・ボディ・余韻）のうち、もっと精度を上げるなら次に問うべき自問を3つ提案
 4. その味から逆算して、次のドリップで「1つだけ」動かすとよい変数とその方向
 
 語彙の押しつけはせず、私の感覚を尊重してください。不確かな点は仮説と明記してください。
@@ -108,40 +749,294 @@
 (function(){
   var BL=BrewersLab;
   var axes=['acid','sweet','bitter','body','after'];
-  var selected=new Set();
 
-  // wheel data
-  var wheel=[
-    {name:'フローラル',color:'#b06a8a',items:['ジャスミン','バラ','カモミール','ラベンダー','紅茶様','エルダーフラワー']},
-    {name:'フルーティ（果実）',color:'#c0532b',items:['ベリー全般','ストロベリー','ブルーベリー','ラズベリー','チェリー','プラム','ぶどう','りんご','洋梨','桃','メロン']},
-    {name:'シトラス（柑橘）',color:'#c08a3e',items:['レモン','ライム','オレンジ','グレープフルーツ','ゆず']},
-    {name:'トロピカル',color:'#a8762f',items:['マンゴー','パイナップル','パッションフルーツ','ライチ','パパイヤ']},
-    {name:'甘味系',color:'#9a6a28',items:['はちみつ','カラメル','黒糖','メープルシロップ','バニラ','チョコレート','ミルクチョコ']},
-    {name:'ナッツ・ココア',color:'#7a5a3a',items:['アーモンド','ヘーゼルナッツ','ピーナッツ','ココア','ダークチョコ','カカオニブ']},
-    {name:'スパイス・ハーブ',color:'#9a5a3a',items:['シナモン','クローブ','黒胡椒','ナツメグ','カルダモン','ローズマリー']},
-    {name:'発酵・ワイン感',color:'#6b5a8a',items:['ワイン様','ラム酒','日本酒様','イチジク','干しブドウ','発酵感']},
-    {name:'ロースト・焦げ感',color:'#5a3a2a',items:['ロースト香','燻製','タバコ','焦げパン','ビター']},
-    {name:'ネガティブ（欠点）',color:'#8a4a4a',items:['過発酵','土っぽい','紙・段ボール','焦げ臭','過度な渋み','金属的','カビ臭']}
+  // ============ Acid map data ============
+  // x: 0=鋭い, 100=丸い  /  y: 0=弱い(下), 100=強い(上)
+  var acidMapData=[
+    {name:'クエン酸',short:'クエン',x:18,y:75,type:'CITRIC',
+      feel:'舌の両脇に鋭く立つ、明るくキレのある酸。',
+      example:'レモン、ライム、グレープフルーツ',
+      coffee:'ケニア（SL28）、エチオピア（イルガチェフェ）、コロンビア浅煎り'},
+    {name:'リンゴ酸',short:'リンゴ',x:65,y:60,type:'MALIC',
+      feel:'丸く、ジューシーで親しみやすい。後味に甘さが伸びる。',
+      example:'青リンゴ、洋梨、白ブドウ',
+      coffee:'コロンビア、コスタリカ、エルサルバドル'},
+    {name:'酒石酸',short:'酒石',x:50,y:55,type:'TARTARIC',
+      feel:'キレと余韻が両方ある複雑な酸。ワイン的。',
+      example:'赤ブドウ、ワイン、タマリンド',
+      coffee:'ケニア、ナチュラル精製の中浅煎り'},
+    {name:'リン酸',short:'リン',x:32,y:48,type:'PHOSPHORIC',
+      feel:'シュワッと弾ける、炭酸的な刺激。爽快感。',
+      example:'コーラ、スパークリングウォーター',
+      coffee:'ケニア、一部のエチオピア'},
+    {name:'乳酸',short:'乳酸',x:78,y:35,type:'LACTIC',
+      feel:'柔らかくクリーミー、なめらかで丸い。',
+      example:'ヨーグルト、発酵バター、サワークリーム',
+      coffee:'ハニー精製、アナエロビック発酵'},
+    {name:'酢酸',short:'酢酸',x:10,y:30,type:'ACETIC',
+      feel:'ピリッと尖る。少量ならフルーティ、過剰だと欠点（vinegar fault）。',
+      example:'酢、過発酵フルーツ',
+      coffee:'ナチュラル精製、過発酵'},
+    {name:'キナ酸',short:'キナ',x:42,y:20,type:'QUINIC',
+      feel:'渋みを伴う酸。焙煎が進むと増加。冷めると目立つ。',
+      example:'紅茶の渋み、緑茶後味',
+      coffee:'深煎り全般、保温時間が長いコーヒー'}
   ];
 
-  // taste descriptions
-  function descSentence(o,flav){
-    var acidW=['','穏やかでフラットな','控えめな','ほどよく明るい','明るい','非常に明るく複雑な'][o.acid];
-    var sweetW=['','甘さに乏しく','控えめな甘さで','程よい甘さで','豊かな甘さで','蜜のような甘さが持続し'][o.sweet];
-    var bitterW=['','苦味はほぼ無く','わずかな苦味で','程よい苦味で','しっかりした苦味で','強い苦味が前に出て'][o.bitter];
-    var bodyW=['','水のように軽く','軽やかな口当たりで','中程度のボディで','厚みのあるボディで','シロップのように重く'][o.body];
-    var afterW=['','余韻は短く消える','やや短い余韻で','程よく続く余韻で','長い余韻があり','非常に長く伸びる余韻で'][o.after];
+  // ============ Sweet map data ============
+  // x: 0=シュガー系, 100=フルーツ系  /  y: 強さ
+  var sweetMapData=[
+    {name:'白砂糖',short:'白糖',x:10,y:40,type:'SUGAR',
+      feel:'クリーンで純粋な甘さ。シンプル。',
+      example:'グラニュー糖、上白糖',
+      coffee:'クリーンな浅煎り、ウォッシュト'},
+    {name:'ブラウンシュガー',short:'黒糖',x:18,y:70,type:'SUGAR',
+      feel:'コクのある甘さ。糖蜜の風味を伴う。',
+      example:'三温糖、きび糖、黒糖',
+      coffee:'中煎り、ナチュラル系'},
+    {name:'キャラメル',short:'カラメ',x:25,y:80,type:'CARAMEL',
+      feel:'焦げ感のある甘さ。焙煎由来のメイラード反応物。',
+      example:'カラメル、トフィー、ヌガー',
+      coffee:'中煎り〜中深煎り全般'},
+    {name:'チョコレート',short:'チョコ',x:28,y:65,type:'CHOC',
+      feel:'カカオの甘み。ミルクチョコ寄りかダーク寄りかで質が変わる。',
+      example:'ミルクチョコ、カカオ60%',
+      coffee:'ブラジル、コロンビア、中深煎り'},
+    {name:'蜂蜜',short:'蜂蜜',x:58,y:75,type:'HONEY',
+      feel:'花の蜜のような複雑な甘さ。フローラルを含む。',
+      example:'アカシア、レンゲ蜂蜜',
+      coffee:'エチオピア、ハニー精製'},
+    {name:'メープル',short:'メプル',x:40,y:60,type:'SYRUP',
+      feel:'木のニュアンスを伴う深い甘さ。',
+      example:'メープルシロップ',
+      coffee:'グアテマラ、エルサルバドル中深煎り'},
+    {name:'熟した果実',short:'果実',x:78,y:80,type:'FRUIT',
+      feel:'果肉のジューシーな甘さ。瑞々しい。',
+      example:'熟した桃、マンゴー、ライチ',
+      coffee:'パナマゲイシャ、エチオピアナチュラル'},
+    {name:'ドライフルーツ',short:'ドライ',x:88,y:55,type:'DRIED',
+      feel:'凝縮された果実の甘さ。発酵感と紙一重。',
+      example:'レーズン、デーツ、いちじく',
+      coffee:'ナチュラル精製、アナエロビック'}
+  ];
 
-    var s='酸質は'+acidW+'、'+sweetW+'、'+bitterW+'。\n口当たりは'+bodyW+'、'+afterW+'。';
-    if(flav&&flav.trim()) s+='\n感じたフレーバー: '+flav.trim()+'。';
-    // hint
-    var hint='';
-    if(o.acid>=4&&o.sweet<=2) hint='\n→ 手がかり: 酸が立ち甘さが乗らない = 未抽出ぎみ。挽き目を細かく/時間を延ばす/湯温を上げる方向。';
-    else if(o.bitter>=4&&o.sweet<=2) hint='\n→ 手がかり: 苦味が勝ち甘さが痩せる = 過抽出ぎみ。挽き目を粗く/時間を縮める/湯温を下げる方向。';
-    else if(o.sweet>=4&&o.bitter<=3) hint='\n→ 手がかり: 甘さが乗りバランス良好。この条件を再現できるかが次の課題。';
-    return s+hint;
+  // ============ Build 2D maps ============
+  function buildMap(elId, data, ttId){
+    var m=document.getElementById(elId);
+    data.forEach(function(d){
+      // 内側エリア（パディング考慮で 10%〜90% に収める）
+      var leftPct=10+d.x*0.8;
+      var topPct=10+(100-d.y)*0.8; // invert: y up
+      var pt=document.createElement('div');
+      pt.className='pt';
+      pt.style.left=leftPct+'%';
+      pt.style.top=topPct+'%';
+      pt.textContent=d.short;
+      pt.title=d.name;
+      pt.onclick=function(){
+        m.querySelectorAll('.pt').forEach(function(x){x.classList.remove('sel');});
+        pt.classList.add('sel');
+        showTT(ttId, d);
+      };
+      m.appendChild(pt);
+    });
+  }
+  function showTT(ttId, d){
+    var t=document.getElementById(ttId);
+    t.classList.add('on');
+    t.innerHTML='';
+    var head=document.createElement('div');
+    head.className='ttname';
+    head.appendChild(document.createTextNode(d.name));
+    var tag=document.createElement('span');
+    tag.className='tttype'; tag.textContent=d.type;
+    head.appendChild(tag);
+    t.appendChild(head);
+    var l1=document.createElement('p'); l1.className='ttline';
+    l1.innerHTML='<b>感覚</b>'+d.feel;
+    t.appendChild(l1);
+    var l2=document.createElement('p'); l2.className='ttline';
+    l2.innerHTML='<b>食材で言うと</b>'+d.example;
+    t.appendChild(l2);
+    var l3=document.createElement('p'); l3.className='ttline';
+    l3.innerHTML='<b>こんなコーヒーで出やすい</b>'+d.coffee;
+    t.appendChild(l3);
+  }
+  buildMap('acidMap', acidMapData, 'acidTT');
+  buildMap('sweetMap', sweetMapData, 'sweetTT');
+
+  // ============ Flavor wheel data with definitions ============
+  // 各フレーバーに sensory definition を付ける
+  var wheel=[
+    {name:'フローラル',color:'#b06a8a',items:[
+      {n:'ジャスミン',d:'白い花の華やかな香り、鼻に抜けるフローラル。エチオピア浅煎り、パナマゲイシャの代表香。'},
+      {n:'バラ',d:'ローズティーのような甘く優雅な花の香り。ゲイシャ系で頻出。'},
+      {n:'カモミール',d:'乾いた花とハーブの中間。優しいハーバル感。'},
+      {n:'ラベンダー',d:'清涼感のあるフローラル。やや香水的。'},
+      {n:'紅茶様',d:'発酵茶の上品な香り。ダージリン的。アフリカ高地系で頻出。'},
+      {n:'エルダーフラワー',d:'マスカット様の白い花。フローラルとフルーティの境界。'}
+    ]},
+    {name:'フルーティ（果実）',color:'#c0532b',items:[
+      {n:'ベリー全般',d:'赤・黒のベリー系の総称。具体化できない時の便宜的な表現。'},
+      {n:'ストロベリー',d:'熟したいちごの甘さと酸。ナチュラル精製で頻出。'},
+      {n:'ブルーベリー',d:'青ベリーの深い果実味。エチオピアナチュラルの典型。'},
+      {n:'ラズベリー',d:'ストロベリーより鋭い酸を伴うベリー。ケニアでも。'},
+      {n:'チェリー',d:'甘く赤い果実。中浅〜中煎りで頻出。'},
+      {n:'プラム',d:'熟したプラムの濃縮された甘酸っぱさ。'},
+      {n:'ぶどう',d:'マスカット系（白）、巨峰系（赤）。ワイン的に発展することも。'},
+      {n:'りんご',d:'青リンゴはリンゴ酸、赤リンゴは丸い甘さ。'},
+      {n:'洋梨',d:'なめらかなジューシーさ。やや控えめな果実味。'},
+      {n:'桃',d:'ピーチティーのような瑞々しい甘さ。ゲイシャで頻出。'},
+      {n:'メロン',d:'マスクメロンのうっとりする甘い香り。高品質の証。'}
+    ]},
+    {name:'シトラス（柑橘）',color:'#c08a3e',items:[
+      {n:'レモン',d:'クエン酸のキレ。明るい酸の代表。'},
+      {n:'ライム',d:'レモンより青く鋭い柑橘。'},
+      {n:'オレンジ',d:'丸く甘い柑橘。マンダリンを含む。'},
+      {n:'グレープフルーツ',d:'柑橘と苦味の交差。ケニアの典型語彙。'},
+      {n:'ゆず',d:'日本的な柑橘の華やかさ。和の表現として頻出。'},
+      {n:'ベルガモット',d:'アールグレイ紅茶の香り。ゲイシャで使われる。'}
+    ]},
+    {name:'トロピカル',color:'#a8762f',items:[
+      {n:'マンゴー',d:'熟した果肉の濃厚な甘さ。アナエロビックで頻出。'},
+      {n:'パイナップル',d:'酸と甘さの強い果実。発酵感と紙一重。'},
+      {n:'パッションフルーツ',d:'香り高い独特の酸味。'},
+      {n:'ライチ',d:'白い果肉のフローラルなフルーティ。ゲイシャで頻出。'},
+      {n:'パパイヤ',d:'柔らかく熟した熱帯果実。'}
+    ]},
+    {name:'甘味系',color:'#9a6a28',items:[
+      {n:'はちみつ',d:'花の蜜の複雑な甘さ。フローラル要素を伴う。'},
+      {n:'カラメル',d:'焦げ感のあるメイラード由来の甘さ。'},
+      {n:'黒糖',d:'糖蜜のコクのある甘さ。ナチュラル系で頻出。'},
+      {n:'メープルシロップ',d:'木質的なニュアンスのある甘さ。'},
+      {n:'バニラ',d:'クリーミーで甘いバニリン香。'},
+      {n:'ミルクチョコ',d:'カカオに乳脂が加わった甘さ。'},
+      {n:'チョコレート',d:'カカオ感のある甘さ。日常語彙の万能札。'}
+    ]},
+    {name:'ナッツ・ココア',color:'#7a5a3a',items:[
+      {n:'アーモンド',d:'香ばしくクリーンなナッツ。ブラジル系で頻出。'},
+      {n:'ヘーゼルナッツ',d:'丸く香ばしいナッツ。中煎りの典型。'},
+      {n:'ピーナッツ',d:'香ばしいローストナッツ。'},
+      {n:'ココア',d:'ココアパウダーのドライなカカオ感。'},
+      {n:'ダークチョコ',d:'カカオ70%以上の苦みを伴うチョコ。'},
+      {n:'カカオニブ',d:'砕いたカカオの香ばしさと苦み。'}
+    ]},
+    {name:'スパイス・ハーブ',color:'#9a5a3a',items:[
+      {n:'シナモン',d:'温かいスパイス香。アナエロビックや発酵系で頻出。'},
+      {n:'クローブ',d:'濃く重いスパイス。深煎りで時々。'},
+      {n:'黒胡椒',d:'ピリッとしたスパイス感。'},
+      {n:'ナツメグ',d:'甘く重いスパイス。'},
+      {n:'カルダモン',d:'清涼感のあるスパイス。'},
+      {n:'ローズマリー',d:'清涼ハーブ。希少だが個性的な豆で。'}
+    ]},
+    {name:'発酵・ワイン感',color:'#6b5a8a',items:[
+      {n:'ワイン様',d:'赤ワインの複雑な発酵感。ケニア・ナチュラルで頻出。'},
+      {n:'ラム酒',d:'糖蜜の発酵スピリッツ感。アナエロビックで。'},
+      {n:'日本酒様',d:'清酒の繊細な発酵感。'},
+      {n:'イチジク',d:'ドライフィグの濃縮された発酵感。'},
+      {n:'干しブドウ',d:'レーズンの凝縮甘味と発酵感。'},
+      {n:'発酵感',d:'具体化できない時の便宜的表現。質次第で良/悪。'}
+    ]},
+    {name:'ロースト・焦げ感',color:'#5a3a2a',items:[
+      {n:'ロースト香',d:'焙煎による香ばしさ。中深煎り以降で。'},
+      {n:'燻製',d:'スモーキーな焦げ感。深煎りの個性。'},
+      {n:'タバコ',d:'乾いた葉巻様の香り。'},
+      {n:'焦げパン',d:'トースト〜オーバーロースト。'},
+      {n:'ビター',d:'広く苦味を指す便宜的表現。'}
+    ]},
+    {name:'ネガティブ（欠点）',color:'#8a4a4a',items:[
+      {n:'過発酵',d:'酢様・腐敗様。精製プロセスの失敗。'},
+      {n:'土っぽい',d:'湿った土・カビ的。生豆の保管問題。'},
+      {n:'紙・段ボール',d:'酸化臭・古い豆。フィルター未すすぎでも。'},
+      {n:'焦げ臭',d:'過焙煎の不快な焦げ。'},
+      {n:'過度な渋み',d:'astringency。過抽出または品質欠陥。'},
+      {n:'金属的',d:'酸化油脂や水質問題。'},
+      {n:'カビ臭',d:'生豆の保管不良。SCA で重大欠点。'}
+    ]}
+  ];
+
+  var selected={}; // name -> data ref
+
+  function renderWheel(){
+    var wl=document.getElementById('wheel'); wl.innerHTML='';
+    wheel.forEach(function(cat){
+      var c=document.createElement('div'); c.className='wheel-cat';
+      var head=document.createElement('div'); head.className='wheel-cat-head';
+      head.style.background=cat.color;
+      head.innerHTML='<span>'+cat.name+'</span><span style="font-size:11px;opacity:.85">'+cat.items.length+'語</span>';
+      c.appendChild(head);
+      var body=document.createElement('div'); body.className='wheel-cat-body';
+      cat.items.forEach(function(it){
+        var chip=document.createElement('button');
+        chip.className='fchip'+(selected[it.n]?' sel':'');
+        chip.type='button';
+        var span=document.createElement('span'); span.textContent=it.n;
+        chip.appendChild(span);
+        chip.onclick=function(e){
+          if(e.target.classList.contains('info')) return;
+          if(selected[it.n]){ delete selected[it.n]; }
+          else{ selected[it.n]={n:it.n,d:it.d,cat:cat.name,color:cat.color}; }
+          renderWheel(); renderSelFlavors(); updateDesc();
+        };
+        var info=document.createElement('span');
+        info.className='info'; info.textContent='i';
+        info.onclick=function(e){
+          e.stopPropagation();
+          showFlavorTT(it, cat);
+        };
+        chip.appendChild(info);
+        body.appendChild(chip);
+      });
+      c.appendChild(body);
+      wl.appendChild(c);
+    });
   }
 
+  function showFlavorTT(it, cat){
+    var t=document.getElementById('flavorTT');
+    t.classList.add('on');
+    t.style.borderLeftColor=cat.color;
+    t.innerHTML='';
+    var head=document.createElement('div'); head.className='ttname';
+    head.appendChild(document.createTextNode(it.n));
+    var tag=document.createElement('span'); tag.className='tttype';
+    tag.style.background=cat.color; tag.textContent=cat.name;
+    head.appendChild(tag);
+    t.appendChild(head);
+    var l1=document.createElement('p'); l1.className='ttline';
+    l1.innerHTML='<b>感覚と定義</b>'+it.d;
+    t.appendChild(l1);
+    var l2=document.createElement('p'); l2.className='ttline';
+    var inSel=selected[it.n];
+    l2.innerHTML='<b>'+(inSel?'選択中':'未選択')+'</b>チップ本体をタップすると'+(inSel?'解除':'選択')+'できます。';
+    t.appendChild(l2);
+    t.scrollIntoView({behavior:'smooth',block:'nearest'});
+  }
+
+  function renderSelFlavors(){
+    var sf=document.getElementById('selFlavors');
+    sf.innerHTML='';
+    var keys=Object.keys(selected);
+    if(keys.length===0){
+      sf.innerHTML='<span class="empty">下のフレーバーホイールから選ぶか、フレーバー辞書で確認してから戻ってきてください</span>';
+      return;
+    }
+    keys.forEach(function(k){
+      var s=selected[k];
+      var b=document.createElement('button');
+      b.className='fchip sel';
+      b.type='button';
+      b.style.background=s.color;
+      b.style.borderColor=s.color;
+      b.textContent=k+' ×';
+      b.onclick=function(){
+        delete selected[k]; renderWheel(); renderSelFlavors(); updateDesc();
+      };
+      sf.appendChild(b);
+    });
+  }
+
+  // ============ Describe builder ============
   function readDesc(){
     var o={};
     axes.forEach(function(a){
@@ -150,10 +1045,26 @@
     });
     return o;
   }
+  function descSentence(o){
+    var acidW=['','穏やかでフラットな','控えめな','ほどよく明るい','明るい','非常に明るく複雑な'][o.acid];
+    var sweetW=['','甘さに乏しく','控えめな甘さで','程よい甘さで','豊かな甘さで','蜜のような甘さが持続し'][o.sweet];
+    var bitterW=['','苦味はほぼ無く','わずかな苦味で','程よい苦味で','しっかりした苦味で','強い苦味が前に出て'][o.bitter];
+    var bodyW=['','水のように軽く','軽やかな口当たりで','中程度のボディで','厚みのあるボディで','シロップのように重く'][o.body];
+    var afterW=['','余韻は短く消える','やや短い余韻で','程よく続く余韻で','長い余韻があり','非常に長く伸びる余韻で'][o.after];
+
+    var s='酸質は'+acidW+'、'+sweetW+'、'+bitterW+'。\n口当たりは'+bodyW+'、'+afterW+'。';
+    var flavList=Object.keys(selected);
+    if(flavList.length) s+='\n感じたフレーバー: '+flavList.join(', ')+'。';
+
+    var hint='';
+    if(o.acid>=4&&o.sweet<=2) hint='\n→ 手がかり: 酸が立ち甘さが乗らない = 未抽出ぎみ。挽き目を細かく/時間を延ばす/湯温を上げる方向。';
+    else if(o.bitter>=4&&o.sweet<=2) hint='\n→ 手がかり: 苦味が勝ち甘さが痩せる = 過抽出ぎみ。挽き目を粗く/時間を縮める/湯温を下げる方向。';
+    else if(o.sweet>=4&&o.bitter<=3) hint='\n→ 手がかり: 甘さが乗りバランス良好。この条件を再現できるかが次の課題。';
+    return s+hint;
+  }
   function updateDesc(){
     var o=readDesc();
-    var flav=Array.from(selected).join(', ');
-    document.getElementById('describe-out').textContent=descSentence(o,flav);
+    document.getElementById('describe-out').textContent=descSentence(o);
   }
   window.copyDesc=function(){
     BL.copyToClipboard(document.getElementById('describe-out').textContent);
@@ -161,111 +1072,144 @@
   };
   window.resetDesc=function(){
     axes.forEach(function(a){document.getElementById('s-'+a).value=(a==='bitter'?2:3);});
-    selected.clear(); renderWheel(); updateDesc();
+    selected={}; renderWheel(); renderSelFlavors(); updateDesc();
   };
-
   axes.forEach(function(a){
     document.getElementById('s-'+a).addEventListener('input',updateDesc);
   });
 
-  // flavor area summary chips
-  function renderFlavorArea(){
-    var fa=document.getElementById('flavor-area');
-    fa.innerHTML='';
-    if(selected.size===0){
-      fa.innerHTML='<div class="small muted">下のフレーバーホイールから語を選ぶと、ここに反映されます</div>';
-      return;
-    }
-    var chips=BL.el('div',{class:'chips'});
-    Array.from(selected).forEach(function(s){
-      var c=BL.el('span',{class:'chip small on',style:{cursor:'pointer'},onclick:function(){
-        selected.delete(s); renderFlavorArea(); renderWheel(); updateDesc();
-      }},s+' ×');
-      chips.appendChild(c);
-    });
-    fa.appendChild(chips);
-  }
-
-  // wheel render
-  function renderWheel(){
-    var wl=document.getElementById('wheel-list'); wl.innerHTML='';
+  // ============ Flavor Dictionary ============
+  function renderDict(){
+    var d=document.getElementById('dict'); d.innerHTML='';
     wheel.forEach(function(cat){
-      var head=BL.el('h3',{style:{color:cat.color,marginTop:'14px',fontSize:'14px'}},cat.name);
-      wl.appendChild(head);
-      var chips=BL.el('div',{class:'chips'});
+      var sec=document.createElement('section');
+      var h3=document.createElement('h3');
+      h3.style.color=cat.color; h3.style.marginTop='22px';
+      h3.textContent=cat.name+'（'+cat.items.length+'語）';
+      sec.appendChild(h3);
+      var grid=document.createElement('div'); grid.className='dict';
       cat.items.forEach(function(it){
-        var c=BL.el('button',{type:'button',class:'chip small'+(selected.has(it)?' on':''),onclick:function(){
-          if(selected.has(it)){selected.delete(it);} else{selected.add(it);}
-          renderWheel(); renderFlavorArea(); updateDesc();
-        }},it);
-        chips.appendChild(c);
+        var card=document.createElement('div'); card.className='dict-card';
+        var h4=document.createElement('h4');
+        var sw=document.createElement('span');
+        sw.className='swatch'; sw.style.background=cat.color;
+        h4.appendChild(sw);
+        h4.appendChild(document.createTextNode(it.n));
+        card.appendChild(h4);
+        var meta=document.createElement('p'); meta.className='meta';
+        meta.textContent=cat.name.toUpperCase();
+        card.appendChild(meta);
+        var def=document.createElement('p'); def.className='def';
+        def.textContent=it.d;
+        card.appendChild(def);
+        grid.appendChild(card);
       });
-      wl.appendChild(chips);
+      sec.appendChild(grid);
+      d.appendChild(sec);
     });
   }
-  renderWheel(); renderFlavorArea(); updateDesc();
 
-  // ===== drill =====
-  var drills=[
-    {desc:'明るくシャープな酸が前に出るが、甘さがほとんど感じられず、後味が軽くすぐ消える。',
-     opts:['未抽出ぎみ','過抽出ぎみ','ちょうど良い'],ans:0,
-     why:'酸が突出し甘さ・余韻が乏しいのは未抽出の典型。抽出が手前で止まっている。挽き目を1段細かく／時間を延ばす／湯温を上げる、のうち1つだけを試す。'},
-    {desc:'飲んだ瞬間から重い苦味と乾いた渋みが舌に残り、甘さが痩せている。後味は不快に長い。',
-     opts:['未抽出ぎみ','過抽出ぎみ','ちょうど良い'],ans:1,
-     why:'苦味・渋みが勝ち甘さが減るのは過抽出。挽き目を1段粗く／時間を縮める／湯温を下げる、のうち1つだけ試す。'},
-    {desc:'やわらかな酸の後に甘さが乗り、苦味は穏やか。クリーンな余韻が伸びる。',
-     opts:['未抽出ぎみ','過抽出ぎみ','ちょうど良い'],ans:2,
-     why:'甘さが中心にあり、酸・苦のバランスが取れ、余韻がクリーン = 適正抽出。まずこの条件を「同一条件反復」で再現できるか確かめる。'},
-    {desc:'酸はそこそこ明るいのに、同じ一杯の中に渋い苦味が混ざり、印象がちぐはぐ。',
-     opts:['挽き目が均一でない（微粉と粗粒の混在）','湯温が低すぎる','レシオが薄すぎる'],ans:0,
-     why:'「未抽出の酸」と「過抽出の渋み」が同居するのは粒度分布が広いサイン。微粉が過抽出、粗粒が未抽出を同時に起こす。グラインダー精度や挽き目の見直し。'},
-    {desc:'全体に味がぼんやり薄く、濃さが足りない。ただし酸・苦のバランスは崩れていない。',
-     opts:['過抽出','濃度（レシオ）の問題','湯温が高すぎる'],ans:1,
-     why:'バランスは取れているのに「薄い」だけなら、抽出率ではなく濃度の問題。粉量を増やすか湯量を減らす（レシオを濃く）。Ch.5 の「濃度≠抽出率」が効く。'},
-    {desc:'香りは華やかだが口に含むと平坦で、甘さも酸も弱く、ぼんやりしている。',
-     opts:['未抽出ぎみ','過抽出ぎみ','ちょうど良い'],ans:0,
-     why:'香りは立つのに味が出ていない = 抽出不足で可溶成分が十分出ていない。挽き目・時間・湯温で抽出を後押し。'},
-    {desc:'最初の一口で「紙のような」「段ボールのような」乾いた風味を感じる。',
-     opts:['過抽出','フィルターのすすぎ不足','水質の問題'],ans:1,
-     why:'紙臭はみさらしフィルターの未洗浄が典型的原因。漂白でも保管環境次第で出る。ドリップ前にお湯でしっかりすすぐ習慣を。'},
-    {desc:'明らかに渋く、抽出時間も平均より長くかかった。',
-     opts:['挽き目が細かすぎる','湯温が低すぎる','豆が古い'],ans:0,
-     why:'抽出時間が伸びて渋い = 流路が詰まり過抽出が進行している。挽き目を1段粗くするのが第一手。'}
-  ];
-  var di=0,score=0;
-  function renderDrill(){
-    var d=drills[di];
-    var p=document.getElementById('drill-panel'); p.innerHTML='';
-    p.dataset.answered='';
-    var prog=BL.el('div',{class:'small muted',style:{marginBottom:'10px'}},'問題 '+(di+1)+' / '+drills.length+'　正解 '+score);
-    p.appendChild(prog);
-    var sc=BL.el('div',{class:'note',style:{borderLeftColor:'var(--accent)',marginTop:0}});
-    sc.innerHTML='<div class="lab" style="margin-bottom:6px">この味の記述から、抽出の状態を推定すると？</div>'+d.desc;
-    p.appendChild(sc);
-    var opts=BL.el('div',{style:{display:'flex',flexDirection:'column',gap:'8px',marginTop:'12px'}});
-    var ex=BL.el('div',{class:'small muted',style:{marginTop:'12px',display:'none',lineHeight:'1.7'}},d.why);
-    d.opts.forEach(function(o,i){
-      var b=BL.el('button',{type:'button',class:'ghost',style:{textAlign:'left',padding:'12px 14px'},onclick:function(){
-        if(p.dataset.answered) return; p.dataset.answered='1';
-        opts.children[d.ans].style.background='#e8eede'; opts.children[d.ans].style.borderColor='var(--good)';
-        if(i===d.ans){score++; } else { b.style.background='#f0e2ea'; b.style.borderColor='var(--bitter)'; }
-        prog.textContent='問題 '+(di+1)+' / '+drills.length+'　正解 '+score;
-        ex.style.display='block';
-        document.getElementById('drill-next').style.display=(di<drills.length-1)?'inline-block':'none';
-        if(di>=drills.length-1){
-          var done=BL.el('div',{class:'note',style:{marginTop:'14px'}});
-          done.innerHTML='<b>全'+drills.length+'問終了。正解 '+score+'/'+drills.length+'。</b> 味から抽出を逆算する筋肉は、実カップでの反復で育ちます。';
-          p.appendChild(done);
-        }
-      }},o);
-      opts.appendChild(b);
-    });
-    p.appendChild(opts); p.appendChild(ex);
+  renderWheel(); renderSelFlavors(); updateDesc(); renderDict();
+
+  // ============ 抽出タイムライン ============
+  // pos: 0=未抽出始点 100=過抽出終点
+  // 各成分の溶解曲線: acid は前半でピーク、sweet は中盤でピーク、bitter は後半で立ち上がる
+  function compoundCurves(pos){
+    // pos 0-100
+    // 酸: 0→急上昇→30%でほぼmax→以降ゆるやかに飽和
+    // 甘: 30%付近から立ち上がり、65%付近でピーク、その後ゆるやか
+    // 苦: 50%以降立ち上がり、85%以降で急増
+    function acidF(p){
+      if(p<=30) return Math.round(p/30*85);
+      return Math.min(100, 85 + (p-30)*0.2);
+    }
+    function sweetF(p){
+      if(p<25) return Math.round(p/25*15);
+      if(p<65) return Math.round(15 + (p-25)/40*80);
+      return Math.round(Math.max(60, 95 - (p-65)*0.4));
+    }
+    function bitterF(p){
+      if(p<40) return Math.round(p/40*8);
+      if(p<70) return Math.round(8 + (p-40)/30*30);
+      return Math.round(Math.min(100, 38 + (p-70)*2.0));
+    }
+    return {acid:acidF(pos), sweet:sweetF(pos), bitter:bitterF(pos)};
   }
-  document.getElementById('drill-next').onclick=function(){
-    if(di<drills.length-1){ di++; renderDrill(); }
+
+  function stateFromPos(pos){
+    if(pos<30) return {key:'under', title:'未抽出（Under-extracted）',
+      body:'酸ばかりが前に出て、甘さがまだ十分に溶け出していない。香りは華やかでも、口に含むと「空っぽ」「水っぽい」感覚。SCA基準では EY 18%未満の領域。',
+      flavors:['鋭い酸','水っぽい','短い余韻','甘さが弱い','香りだけ立つ']};
+    if(pos<70) return {key:'good', title:'適正バランス（Balanced）',
+      body:'序盤の酸と中盤の甘さがきれいに重なり、終盤の苦味はまだ穏やか。SCAゴールデンカップ的にはこのあたり（EY 18〜22%）。再現できれば「基準レシピ」になる。',
+      flavors:['明るい酸','豊かな甘さ','滑らかなボディ','クリーンな余韻','バランス良好']};
+    return {key:'over', title:'過抽出（Over-extracted）',
+      body:'抽出が進みすぎて、後ろの成分まで引き出されている。甘さは痩せ、渋み・乾いた苦味が前に出る。SCA基準では EY 22%超の領域（豆によっては問題なく成立することも）。',
+      flavors:['強い苦味','渋み（収れん）','甘さが痩せる','長く尾を引く後味','口が乾く']};
+  }
+
+  function renderTimeline(pos){
+    var c=compoundCurves(pos);
+    document.getElementById('bar-acid').style.width=c.acid+'%';
+    document.getElementById('bar-sweet').style.width=c.sweet+'%';
+    document.getElementById('bar-bitter').style.width=c.bitter+'%';
+    document.getElementById('val-acid').textContent=c.acid+'%';
+    document.getElementById('val-sweet').textContent=c.sweet+'%';
+    document.getElementById('val-bitter').textContent=c.bitter+'%';
+    document.getElementById('tlMarker').style.left=pos+'%';
+
+    var s=stateFromPos(pos);
+    var box=document.getElementById('extractState');
+    box.classList.remove('under','good','over');
+    box.classList.add(s.key);
+    document.getElementById('esTitle').textContent=s.title;
+    document.getElementById('esBody').textContent=s.body;
+    var fo=document.getElementById('esFlavors');
+    fo.innerHTML='';
+    s.flavors.forEach(function(f){
+      var t=document.createElement('span'); t.className='ftag'; t.textContent=f;
+      fo.appendChild(t);
+    });
+  }
+
+  document.getElementById('tlSlider').addEventListener('input',function(){
+    renderTimeline(+this.value);
+  });
+  window.setTimeline=function(v){
+    document.getElementById('tlSlider').value=v;
+    renderTimeline(v);
   };
-  renderDrill();
+  renderTimeline(50);
+
+  // ============ ネガティブフレーバー解剖学 アコーディオン ============
+  window.toggleDefect=function(headerEl){
+    var item=headerEl.parentElement;
+    var wasOpen=item.classList.contains('open');
+    // 排他的にしない（複数同時に開けてもよい）
+    item.classList.toggle('open');
+  };
+
+  // ============ Section nav highlight ============
+  var sections=['sec1','sec2','sec3','sec4','sec5','sec6','sec7','sec8','sec9'];
+  var navLinks=document.querySelectorAll('.secnav a');
+  window.addEventListener('scroll',function(){
+    var cur=sections[0];
+    for(var i=0;i<sections.length;i++){
+      var el=document.getElementById(sections[i]);
+      if(el && el.getBoundingClientRect().top<120) cur=sections[i];
+    }
+    navLinks.forEach(function(a){
+      a.classList.toggle('active', a.getAttribute('href')==='#'+cur);
+    });
+  });
+  navLinks.forEach(function(a){
+    a.addEventListener('click',function(e){
+      e.preventDefault();
+      var id=this.getAttribute('href').slice(1);
+      var el=document.getElementById(id);
+      if(el) el.scrollIntoView({behavior:'smooth',block:'start'});
+    });
+  });
 })();
 </script>
 </body>
